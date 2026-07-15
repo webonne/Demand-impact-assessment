@@ -1,0 +1,109 @@
+# 需求解构产物示例（REQ-2026-001 订单积分抵扣）
+#
+# 该文件可由 `req-insight decompose` 用 LLM 生成，也可以人工编写（离线模式）。
+# 结构说明见 docs/02-需求左移与解构.md。
+
+requirement_id: REQ-2026-001
+title: 订单积分抵扣
+source_type: document
+summary: |
+  打通积分与交易：用户下单时可用积分按 100:1 抵扣订单金额（上限 30%），
+  下单冻结、支付扣减、超时解冻、退款按分摊比例回退。
+  核心难点在订单计价的抵扣分摊，以及退款链路的积分回退一致性。
+
+journeys:
+  - name: 用积分下单并完成支付
+    persona: 会员用户
+    stages:
+      - name: 结算
+        user_action: 在提交订单页勾选「使用积分抵扣」
+        touchpoint: 商城前端-提交订单页
+        system_behavior: 订单计价实时计算抵扣金额与分摊明细
+        note: 抵扣上限为订单金额 30%
+      - name: 提交订单
+        user_action: 确认订单并提交
+        touchpoint: 商城前端
+        system_behavior: 创建订单，同时冻结对应积分
+        note: 冻结失败则下单失败
+      - name: 支付
+        user_action: 完成支付
+        touchpoint: 收银台
+        system_behavior: 支付回调后正式扣减冻结积分
+        note: 超时未支付自动解冻
+      - name: 退款
+        user_action: 申请售后并退款成功
+        touchpoint: 商城前端-售后
+        system_behavior: 按分摊比例回退积分到积分账户
+        note: 回退需与原抵扣分摊一致
+
+stories:
+  - id: US-1
+    title: 下单页选择积分抵扣
+    as_a: 会员用户
+    i_want: 在提交订单时选择使用积分抵扣部分金额
+    so_that: 让积分产生实际价值，付更少的钱
+    acceptance_criteria:
+      - 100 积分 = 1 元，单笔最多抵扣订单金额 30%
+      - 积分不足时展示可抵扣上限
+    keywords: [提交订单, 积分, 抵扣]
+  - id: US-2
+    title: 订单计价展示抵扣分摊
+    as_a: 会员用户
+    i_want: 看到积分抵扣金额及其在多商品间的分摊明细
+    so_that: 清楚每件商品实际支付多少
+    acceptance_criteria:
+      - 分摊总额等于抵扣总额，无一分钱误差
+      - 抵扣部分不计入满减门槛
+    keywords: [计价, 分摊, 抵扣, 优惠]
+  - id: US-3
+    title: 下单冻结与支付扣减积分
+    as_a: 平台
+    i_want: 下单时冻结积分、支付成功后扣减、超时解冻
+    so_that: 防止积分超用，保证账实一致
+    acceptance_criteria:
+      - 冻结失败则下单失败
+      - 支付超时关单后积分自动解冻
+    keywords: [积分冻结, 积分账户, 支付成功]
+  - id: US-4
+    title: 退款回退积分
+    as_a: 会员用户
+    i_want: 退款时按分摊比例回退我抵扣掉的积分
+    so_that: 退货不损失积分
+    acceptance_criteria:
+      - 回退积分与原订单抵扣分摊一致
+      - 部分退款按比例回退
+    keywords: [退款, 积分回退, 积分账户]
+
+swimlane_mermaid: |-
+  sequenceDiagram
+    participant U as 用户
+    participant FE as 商城前端
+    participant ORD as 订单服务
+    participant PTS as 积分服务
+    participant PAY as 支付服务
+    participant AS as 售后服务
+    U->>FE: 勾选积分抵扣并提交订单
+    FE->>ORD: 提交订单(使用积分)
+    ORD->>PTS: 计算可抵扣额度 / 冻结积分
+    PTS-->>ORD: 冻结成功
+    ORD-->>FE: 订单创建成功(含抵扣分摊)
+    U->>PAY: 支付
+    PAY->>ORD: 支付回调
+    ORD->>PTS: 扣减冻结积分
+    Note over U,AS: —— 退款链路 ——
+    U->>AS: 申请售后
+    AS->>PAY: 原路退款
+    AS->>PTS: 按分摊比例回退积分
+
+glossary:
+  抵扣分摊: 积分抵扣总金额按商品实付金额比例分摊到各订单行
+  冻结: 下单占用但未扣减的积分状态，支付成功后转为扣减
+
+assumptions:
+  - 积分抵扣与优惠券可叠加使用，抵扣在券后金额基础上计算
+  - 回退积分不受积分有效期影响（过期积分退款仍回退）
+
+open_questions:
+  - 部分发货后仅退部分商品，积分回退按行分摊还是按比例？
+  - 积分抵扣金额是否参与会员成长值计算？
+  - 冻结积分在积分明细页如何展示？

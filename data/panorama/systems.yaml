@@ -1,0 +1,70 @@
+# 业务全景图：系统/服务 与 数据实体
+#
+# systems.depends_on 表示「调用/依赖」方向：A depends_on B = A 调用 B。
+# 影响面分析会反向找出「谁依赖了受影响的系统」（上游调用方）。
+#
+# ⚠ 本文件是示例（电商域），接入自己业务时整体替换。
+
+systems:
+  - id: app-h5
+    name: 商城前端
+    owner: 前端组
+    depends_on: [svc-user, svc-cart, svc-order, svc-pay, svc-aftersale, svc-fulfillment, svc-points]
+  - id: svc-user
+    name: 用户服务
+    owner: 用户组
+  - id: svc-points
+    name: 积分服务
+    owner: 营销组
+    depends_on: [svc-user]
+  - id: svc-promo
+    name: 营销服务
+    owner: 营销组
+  - id: svc-cart
+    name: 购物车服务
+    owner: 交易组
+  - id: svc-order
+    name: 订单服务
+    owner: 交易组
+    depends_on: [svc-user, svc-cart, svc-promo, svc-points]
+  - id: svc-pay
+    name: 支付服务
+    owner: 交易组
+    depends_on: [svc-order]
+  - id: svc-fulfillment
+    name: 履约服务
+    owner: 履约组
+    depends_on: [svc-order]
+  - id: svc-aftersale
+    name: 售后服务
+    owner: 售后组
+    depends_on: [svc-order, svc-pay, svc-points]
+
+entities:
+  - id: ent-user
+    name: 用户
+    owned_by: svc-user
+  - id: ent-cart
+    name: 购物车
+    owned_by: svc-cart
+  - id: ent-order
+    name: 订单
+    owned_by: svc-order
+  - id: ent-payment
+    name: 支付单
+    owned_by: svc-pay
+  - id: ent-coupon
+    name: 优惠券
+    owned_by: svc-promo
+  - id: ent-points-account
+    name: 积分账户
+    owned_by: svc-points
+  - id: ent-points-flow
+    name: 积分流水
+    owned_by: svc-points
+  - id: ent-shipment
+    name: 发货单
+    owned_by: svc-fulfillment
+  - id: ent-refund
+    name: 售后单
+    owned_by: svc-aftersale

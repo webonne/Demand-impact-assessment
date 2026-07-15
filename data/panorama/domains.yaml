@@ -1,0 +1,161 @@
+# 业务全景图：业务域 → 业务能力 → 功能点
+#
+# 这是「图谱即代码」的核心文件：需求最终都要落到这里的功能点上。
+# 每个功能点维护：
+#   keywords        —— 需求/故事文本匹配用的关键词（越全命中率越高）
+#   implemented_by  —— 实现系统（见 systems.yaml）
+#   reads / writes  —— 读写的数据实体（见 systems.yaml）
+#   triggers        —— 业务流程下游功能点（影响面沿此传播）
+#   criticality     —— 关键度 low / medium / high（high 会触发风险提示）
+#
+# ⚠ 本文件是示例（电商域），接入自己业务时整体替换。
+
+domains:
+  - id: dom-user
+    name: 用户域
+    description: 账户、登录、会员体系
+    capabilities:
+      - id: cap-account
+        name: 账户
+        function_points:
+          - id: fp-login
+            name: 登录注册
+            keywords: [登录, 注册, 验证码, 账号]
+            implemented_by: [svc-user]
+            writes: [ent-user]
+            criticality: high
+          - id: fp-member-level
+            name: 会员等级
+            keywords: [会员, 等级, 成长值]
+            implemented_by: [svc-user]
+            reads: [ent-points-flow]
+            writes: [ent-user]
+
+  - id: dom-marketing
+    name: 营销域
+    description: 优惠券、积分等营销工具
+    capabilities:
+      - id: cap-coupon
+        name: 优惠券
+        function_points:
+          - id: fp-coupon-apply
+            name: 优惠券使用
+            keywords: [优惠券, 券, 满减]
+            implemented_by: [svc-promo]
+            writes: [ent-coupon]
+      - id: cap-points
+        name: 积分体系
+        function_points:
+          - id: fp-points-account
+            name: 积分账户管理
+            description: 积分余额的增减、冻结与解冻
+            keywords: [积分, 积分账户, 积分余额, 积分冻结, 积分回退]
+            implemented_by: [svc-points]
+            writes: [ent-points-account, ent-points-flow]
+            criticality: high
+          - id: fp-points-earn
+            name: 积分获取
+            description: 支付成功后按规则发放积分
+            keywords: [积分发放, 赚积分, 返积分]
+            implemented_by: [svc-points]
+            writes: [ent-points-flow]
+
+  - id: dom-trade
+    name: 交易域
+    description: 购物车、下单、计价、支付
+    capabilities:
+      - id: cap-cart
+        name: 购物车
+        function_points:
+          - id: fp-cart
+            name: 购物车管理
+            keywords: [购物车, 加购]
+            implemented_by: [svc-cart]
+            writes: [ent-cart]
+      - id: cap-order
+        name: 下单
+        function_points:
+          - id: fp-order-submit
+            name: 提交订单
+            keywords: [下单, 提交订单, 结算, 确认订单]
+            implemented_by: [svc-order]
+            writes: [ent-order]
+            triggers: [fp-pay-create]
+            criticality: high
+          - id: fp-order-price
+            name: 订单计价
+            description: 订单金额计算：商品价、运费、优惠分摊
+            keywords: [计价, 金额, 价格, 优惠, 抵扣, 分摊, 运费]
+            implemented_by: [svc-order]
+            reads: [ent-coupon]
+            writes: [ent-order]
+            criticality: high
+      - id: cap-pay
+        name: 支付
+        function_points:
+          - id: fp-pay-create
+            name: 支付单创建
+            keywords: [支付, 收银台, 付款]
+            implemented_by: [svc-pay]
+            reads: [ent-order]
+            writes: [ent-payment]
+          - id: fp-pay-callback
+            name: 支付回调处理
+            description: 支付成功回调：更新订单状态、触发发货与积分发放
+            keywords: [支付回调, 支付成功, 回调]
+            implemented_by: [svc-pay]
+            writes: [ent-payment, ent-order]
+            triggers: [fp-points-earn, fp-ship]
+            criticality: high
+
+  - id: dom-fulfillment
+    name: 履约域
+    description: 发货与物流
+    capabilities:
+      - id: cap-delivery
+        name: 发货
+        function_points:
+          - id: fp-ship
+            name: 发货
+            keywords: [发货, 出库, 履约]
+            implemented_by: [svc-fulfillment]
+            reads: [ent-order]
+            writes: [ent-shipment]
+          - id: fp-logistics-track
+            name: 物流跟踪
+            keywords: [物流, 快递, 轨迹, 配送进度]
+            implemented_by: [svc-fulfillment]
+            reads: [ent-shipment]
+
+  - id: dom-aftersale
+    name: 售后域
+    description: 退款、退货、售后进度
+    capabilities:
+      - id: cap-refund
+        name: 退款退货
+        function_points:
+          - id: fp-refund-apply
+            name: 售后申请
+            keywords: [售后, 退货, 退款申请, 仅退款]
+            implemented_by: [svc-aftersale]
+            reads: [ent-order]
+            writes: [ent-refund]
+          - id: fp-refund-audit
+            name: 售后审核
+            keywords: [售后审核, 审核]
+            implemented_by: [svc-aftersale]
+            writes: [ent-refund]
+            triggers: [fp-refund-money]
+          - id: fp-refund-money
+            name: 退款执行
+            description: 审核通过后原路退款，并处理优惠/积分回退
+            keywords: [退款, 原路退回, 退积分]
+            implemented_by: [svc-aftersale]
+            reads: [ent-payment, ent-order]
+            writes: [ent-refund]
+            criticality: high
+          - id: fp-aftersale-progress
+            name: 售后进度查询
+            keywords: [售后进度, 进度查询, 售后详情]
+            implemented_by: [svc-aftersale]
+            reads: [ent-refund, ent-shipment]

@@ -71,6 +71,11 @@ def test_cli_run_offline_generates_report(tmp_path):
     # 数据影响与依赖影响层
     assert "数据影响" in report
     assert "依赖影响" in report
+    # 技术影响面：接口投影 + 接口级依赖收窄
+    assert "技术影响面" in report
+    assert "if-order-price" in report
+    assert "需改动" in report
+    assert "接口级依赖确认波及" in report
     # 跨团队建议
     assert "团队" in report
     # 泳道图与旅程

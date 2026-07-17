@@ -2,8 +2,9 @@
 
 全景图以「图谱即代码」的方式维护在 YAML 文件中（默认 data/panorama/）：
 
-- domains.yaml   业务域 → 业务能力 → 功能点
-- systems.yaml   系统/服务、数据实体
+- domains.yaml     业务域 → 业务能力 → 功能点
+- systems.yaml     系统/服务、数据实体
+- interfaces.yaml  接口/模块层（可选，技术视角用；缺失时技术视角自动降级）
 
 加载后构建为有向图（节点 + 类型化边），供影响面分析遍历。
 """
@@ -17,10 +18,13 @@ from typing import Any
 import yaml
 
 from ..models import (
+    INTERFACE_KINDS,
     Capability,
     Domain,
     Entity,
     FunctionPoint,
+    Interface,
+    Module,
     Panorama,
     System,
 )
@@ -32,6 +36,9 @@ DEPENDS_ON = "depends_on"        # system -> system（调用/依赖方向）
 READS = "reads"                  # function_point -> entity
 WRITES = "writes"                # function_point -> entity
 TRIGGERS = "triggers"            # function_point -> function_point（业务流程下游）
+EXPOSES = "exposes"              # function_point -> interface（改功能点 = 动这些契约）
+CALLS = "calls"                  # system/module -> interface（接口级调用，细化 depends_on）
+IMPLEMENTED_IN = "implemented_in"  # interface -> module（定位到改哪个模块）
 
 
 @dataclass
@@ -132,7 +139,41 @@ def load_panorama(directory: str | Path) -> Panorama:
         )
         for e in systems_data.get("entities", [])
     ]
-    return Panorama(domains=domains, systems=systems, entities=entities)
+
+    # 接口/模块层是可选文件：没有它，技术视角降级为系统级（与旧行为一致）
+    interfaces_path = directory / "interfaces.yaml"
+    interfaces_data = _load_yaml(interfaces_path) if interfaces_path.is_file() else {}
+    interfaces = [
+        Interface(
+            id=i["id"],
+            name=i.get("name", i["id"]),
+            kind=i.get("kind", "http"),
+            system=i.get("system", ""),
+            ref=i.get("ref", ""),
+            module=i.get("module", ""),
+            exposed_by=list(i.get("exposed_by", [])),
+            called_by=list(i.get("called_by", [])),
+            description=i.get("description", ""),
+        )
+        for i in interfaces_data.get("interfaces", [])
+    ]
+    modules = [
+        Module(
+            id=m["id"],
+            name=m.get("name", m["id"]),
+            system=m.get("system", ""),
+            path=m.get("path", ""),
+            description=m.get("description", ""),
+        )
+        for m in interfaces_data.get("modules", [])
+    ]
+    return Panorama(
+        domains=domains,
+        systems=systems,
+        entities=entities,
+        interfaces=interfaces,
+        modules=modules,
+    )
 
 
 def build_graph(panorama: Panorama) -> KnowledgeGraph:
@@ -157,6 +198,14 @@ def build_graph(panorama: Panorama) -> KnowledgeGraph:
     for sys_ in panorama.systems:
         for dep in sys_.depends_on:
             graph.add_edge(sys_.id, dep, DEPENDS_ON)
+
+    for itf in panorama.interfaces:
+        for fp_id in itf.exposed_by:
+            graph.add_edge(fp_id, itf.id, EXPOSES)
+        for caller in itf.called_by:
+            graph.add_edge(caller, itf.id, CALLS)
+        if itf.module:
+            graph.add_edge(itf.id, itf.module, IMPLEMENTED_IN)
 
     return graph
 
@@ -203,6 +252,45 @@ def validate_panorama(panorama: Panorama) -> tuple[list[str], list[str]]:
         if ent.owned_by and ent.owned_by not in system_ids:
             errors.append(f"数据实体 {ent.id} 归属了不存在的系统: {ent.owned_by}")
 
+    # 接口/模块层（可选，存在才校验）
+    module_ids = {m.id for m in panorama.modules}
+    depends = {s.id: set(s.depends_on) for s in panorama.systems}
+    for mod in panorama.modules:
+        if mod.system not in system_ids:
+            errors.append(f"模块 {mod.id} 归属了不存在的系统: {mod.system}")
+    for itf in panorama.interfaces:
+        if itf.kind not in INTERFACE_KINDS:
+            errors.append(f"接口 {itf.id} 的 kind 非法: {itf.kind}（可选 {'/'.join(INTERFACE_KINDS)}）")
+        if itf.system not in system_ids:
+            errors.append(f"接口 {itf.id} 归属了不存在的系统: {itf.system}")
+        if itf.module and itf.module not in module_ids:
+            errors.append(f"接口 {itf.id} 引用了不存在的模块: {itf.module}")
+        for fp_id in itf.exposed_by:
+            if fp_id not in fp_ids:
+                errors.append(f"接口 {itf.id} 关联了不存在的功能点: {fp_id}")
+        for caller in itf.called_by:
+            if caller in module_ids:
+                caller_sys = next(m.system for m in panorama.modules if m.id == caller)
+            elif caller in system_ids:
+                caller_sys = caller
+            else:
+                errors.append(f"接口 {itf.id} 的调用方不存在（须为系统或模块）: {caller}")
+                continue
+            # http/rpc 的接口级调用应与系统级 depends_on 一致；mq/job 是异步消费，不要求
+            if (
+                itf.kind in ("http", "rpc")
+                and caller_sys != itf.system
+                and itf.system not in depends.get(caller_sys, set())
+            ):
+                warnings.append(
+                    f"接口 {itf.id}（{itf.name}）被 {caller} 调用，"
+                    f"但系统 {caller_sys} 未声明 depends_on {itf.system}，两级依赖不一致"
+                )
+        if not itf.exposed_by:
+            warnings.append(
+                f"接口 {itf.id}（{itf.name}）没有关联功能点（exposed_by），技术视角无法投影到它"
+            )
+
     del idx
     return errors, warnings
 
@@ -216,4 +304,6 @@ def _all_ids(panorama: Panorama) -> list[str]:
             ids.extend(fp.id for fp in cap.function_points)
     ids.extend(s.id for s in panorama.systems)
     ids.extend(e.id for e in panorama.entities)
+    ids.extend(i.id for i in panorama.interfaces)
+    ids.extend(m.id for m in panorama.modules)
     return ids

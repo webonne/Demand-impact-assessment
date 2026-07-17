@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 from ..graph.impact import ImpactResult
-from ..graph.loader import KnowledgeGraph
+from ..graph.loader import EXPOSES, KnowledgeGraph
 from ..graph.render import render_impact_mermaid, render_journey_mermaid
 from ..matching.mapper import StoryMapping
 from ..models import Artifacts
@@ -25,6 +25,10 @@ _LEVEL_TITLES = {
 }
 
 _KIND_NAMES = {"function_point": "功能点", "system": "系统", "entity": "数据实体"}
+
+_SCOPE_LABELS = {"change": "**需改动**", "regression": "回归验证"}
+
+_IF_KIND_LABELS = {"http": "HTTP", "rpc": "RPC", "mq": "MQ", "job": "JOB"}
 
 
 def render_report(
@@ -123,6 +127,7 @@ def render_report(
             for team, systems in result.teams.items():
                 add(f"| {team} | {'、'.join(systems)} |")
             add("")
+        _render_tech_section(lines, result, graph, unmatched)
     else:
         add("（未识别到影响面 —— 所有故事均未匹配到功能点，请先完善全景图关键词）")
         add("")
@@ -172,3 +177,71 @@ def render_report(
         add("")
 
     return "\n".join(lines)
+
+
+def _render_tech_section(
+    lines: list[str],
+    result: ImpactResult,
+    graph: KnowledgeGraph,
+    unmatched: list[StoryMapping],
+) -> None:
+    """4.x 技术影响面：业务影响面在接口/模块层的投影。"""
+    add = lines.append
+    tech = result.tech
+
+    add("### 技术影响面（接口 / 模块）")
+    add("")
+    if not tech.has_interface_data:
+        add("（全景图未配置接口/模块层 `interfaces.yaml`，技术视角降级为上表的系统级结论。")
+        add("补充方法见 docs/04-技术视角影响面.md）")
+        add("")
+        return
+
+    if tech.interfaces:
+        add("| 接口 | 类型 | 契约 | 所属系统 | 影响 | 调用方 | 原因 |")
+        add("| --- | --- | --- | --- | --- | --- | --- |")
+        for t in tech.interfaces:
+            kind = _IF_KIND_LABELS.get(t.kind, t.kind)
+            callers = "、".join(t.callers) if t.callers else "—"
+            ref = f"`{t.ref}`" if t.ref else "—"
+            add(
+                f"| `{t.id}` {t.name} | {kind} | {ref} | {t.system_name} | "
+                f"{_SCOPE_LABELS[t.scope]} | {callers} | {t.reason} |"
+            )
+        add("")
+    else:
+        add("（受影响功能点均未映射到接口，技术视角暂无接口级结论）")
+        add("")
+
+    if tech.modules:
+        add("| 模块 | 所属系统 | 代码位置 | 影响 | 原因 |")
+        add("| --- | --- | --- | --- | --- |")
+        for m in tech.modules:
+            path = f"`{m.path}`" if m.path else "—"
+            add(
+                f"| `{m.id}` {m.name} | {m.system_name} | {path} | "
+                f"{_SCOPE_LABELS[m.scope]} | {m.reason} |"
+            )
+        add("")
+
+    # 覆盖缺口：直接命中但没有接口映射的功能点，技术视角对其降级
+    unmapped = [
+        i.name
+        for i in result.by_level("direct")
+        if i.kind == "function_point" and not graph.out_edges(i.id, EXPOSES)
+    ]
+    if unmapped:
+        add("> ℹ 以下直接命中功能点尚未映射接口（`exposed_by`），其技术影响仍以系统级结论为准：")
+        add("> " + "、".join(unmapped))
+        add("")
+
+    if tech.excluded_callers:
+        add("> ✂ **依赖收窄**：以下调用方按接口级依赖排除出影响面（如接口图谱有遗漏请人工复核）：")
+        for text in tech.excluded_callers:
+            add(f"> - {text}")
+        add("")
+
+    if unmatched:
+        add("> ⚠ 疑似新功能点（见第 3 节）**预计需新增接口**；")
+        add("> 回补全景图时请把新功能点与其接口一并登记进 `interfaces.yaml`。")
+        add("")

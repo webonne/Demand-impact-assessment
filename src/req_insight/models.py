@@ -72,13 +72,48 @@ class Entity:
     owned_by: str = ""  # -> System.id
 
 
+INTERFACE_KINDS = ("http", "rpc", "mq", "job")
+
+
+@dataclass
+class Interface:
+    """接口：系统对外契约（HTTP/RPC/MQ topic/定时任务）。
+
+    技术视角影响面的最小单元。业务信息（exposed_by 指向功能点）与
+    技术信息都维护在 interfaces.yaml，domains.yaml 不感知接口。
+    """
+
+    id: str
+    name: str
+    kind: str = "http"          # http | rpc | mq | job
+    system: str = ""            # -> System.id（接口归属系统）
+    ref: str = ""               # 契约标识：路径 / proto 方法 / topic 名
+    module: str = ""            # -> Module.id（可选，实现模块）
+    exposed_by: list[str] = field(default_factory=list)  # -> FunctionPoint.id
+    called_by: list[str] = field(default_factory=list)   # -> System.id | Module.id
+    description: str = ""
+
+
+@dataclass
+class Module:
+    """模块：系统内部的代码单元（可选粒度，接口定位到「改哪里」用）。"""
+
+    id: str
+    name: str
+    system: str = ""  # -> System.id
+    path: str = ""    # 代码目录（可选）
+    description: str = ""
+
+
 @dataclass
 class Panorama:
-    """业务全景图 = 域/能力/功能点 + 系统 + 数据实体。"""
+    """业务全景图 = 域/能力/功能点 + 系统 + 数据实体（+ 可选接口/模块层）。"""
 
     domains: list[Domain] = field(default_factory=list)
     systems: list[System] = field(default_factory=list)
     entities: list[Entity] = field(default_factory=list)
+    interfaces: list[Interface] = field(default_factory=list)
+    modules: list[Module] = field(default_factory=list)
 
     def function_points(self) -> list[FunctionPoint]:
         return [
@@ -100,6 +135,10 @@ class Panorama:
             idx[sys_.id] = sys_
         for ent in self.entities:
             idx[ent.id] = ent
+        for itf in self.interfaces:
+            idx[itf.id] = itf
+        for mod in self.modules:
+            idx[mod.id] = mod
         return idx
 
 

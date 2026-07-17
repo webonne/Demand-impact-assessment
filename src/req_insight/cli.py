@@ -59,11 +59,16 @@ def cmd_validate(args: argparse.Namespace) -> int:
     panorama = load_panorama(_find_panorama_dir(args.panorama))
     errors, warnings = validate_panorama(panorama)
     fps = panorama.function_points()
+    tech_stat = (
+        f" / {len(panorama.interfaces)} 个接口 / {len(panorama.modules)} 个模块"
+        if panorama.interfaces or panorama.modules
+        else "（未配置接口/模块层）"
+    )
     print(
         f"全景图统计：{len(panorama.domains)} 个业务域 / "
         f"{sum(len(d.capabilities) for d in panorama.domains)} 个能力 / "
         f"{len(fps)} 个功能点 / {len(panorama.systems)} 个系统 / "
-        f"{len(panorama.entities)} 个数据实体"
+        f"{len(panorama.entities)} 个数据实体" + tech_stat
     )
     for w in warnings:
         print(f"[警告] {w}")

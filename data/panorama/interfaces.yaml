@@ -1,0 +1,116 @@
+# 业务全景图：接口/模块层（技术视角，可选文件）
+#
+# 本文件缺失或为空时，技术视角自动降级为系统级结论（与业务视角一致），
+# 所以可以按域渐进补充 —— 本示例刻意只覆盖交易域 + 积分服务，
+# 营销/用户/售后域未覆盖，用来演示部分覆盖时的降级行为。
+#
+# interfaces 字段说明：
+#   kind        —— http | rpc | mq | job
+#   ref         —— 契约标识：HTTP 路径 / RPC 方法 / MQ topic / 任务名
+#   system      —— 接口归属系统（见 systems.yaml）
+#   module      —— 实现模块（可选，定位「改哪里」）
+#   exposed_by  —— 承载该接口的功能点（业务 → 技术的映射边，写在接口侧，
+#                  domains.yaml 不感知接口，业务/技术文件各自演进）
+#   called_by   —— 调用方：系统 id 或模块 id（模块粒度可把依赖影响
+#                  从「整个前端」收窄到「结算页模块」）
+#
+# 一致性约束（req-insight validate）：
+#   http/rpc 接口的调用方系统须声明 depends_on 接口归属系统；
+#   mq/job 是异步消费，不要求 depends_on。
+#
+# ⚠ 本文件是示例（电商域），接入自己业务时整体替换。
+
+modules:
+  - id: mod-order-core
+    name: 订单核心模块
+    system: svc-order
+    path: order-service/core/
+  - id: mod-order-pricing
+    name: 计价模块
+    system: svc-order
+    path: order-service/pricing/
+  - id: mod-h5-checkout
+    name: 结算页模块
+    system: app-h5
+    path: mall-h5/src/pages/checkout/
+  - id: mod-points-core
+    name: 积分账务模块
+    system: svc-points
+    path: points-service/ledger/
+
+interfaces:
+  # ---- 订单服务 ----
+  - id: if-order-price
+    name: 订单试算
+    kind: http
+    system: svc-order
+    ref: "POST /api/order/price"
+    module: mod-order-pricing
+    exposed_by: [fp-order-price]
+    called_by: [mod-h5-checkout]
+  - id: if-order-submit
+    name: 提交订单
+    kind: http
+    system: svc-order
+    ref: "POST /api/order/submit"
+    module: mod-order-core
+    exposed_by: [fp-order-submit]
+    called_by: [mod-h5-checkout]
+  - id: if-order-detail
+    name: 订单详情查询
+    kind: rpc
+    system: svc-order
+    ref: "OrderService.getOrder"
+    module: mod-order-core
+    exposed_by: [fp-order-submit]
+    called_by: [svc-pay, svc-aftersale, svc-fulfillment]
+
+  # ---- 支付服务 ----
+  - id: if-pay-create
+    name: 创建支付单
+    kind: http
+    system: svc-pay
+    ref: "POST /api/pay/create"
+    exposed_by: [fp-pay-create]
+    called_by: [mod-h5-checkout]
+  - id: if-pay-notify
+    name: 支付渠道回调
+    kind: http
+    system: svc-pay
+    ref: "POST /api/pay/notify"
+    description: 外部支付渠道回调，无内部调用方
+    exposed_by: [fp-pay-callback]
+  - id: if-pay-success-event
+    name: 支付成功消息
+    kind: mq
+    system: svc-pay
+    ref: "topic: pay.success"
+    exposed_by: [fp-pay-callback]
+    called_by: [svc-fulfillment, svc-points]
+
+  # ---- 积分服务 ----
+  - id: if-points-freeze
+    name: 积分冻结
+    kind: rpc
+    system: svc-points
+    ref: "PointsService.freeze"
+    module: mod-points-core
+    exposed_by: [fp-points-account]
+    called_by: [svc-order]
+  - id: if-points-unfreeze
+    name: 积分解冻
+    kind: rpc
+    system: svc-points
+    ref: "PointsService.unfreeze"
+    module: mod-points-core
+    description: 订单超时关闭时解冻下单冻结的积分
+    exposed_by: [fp-points-account]
+    called_by: [svc-order]
+  - id: if-points-refund
+    name: 积分回退
+    kind: rpc
+    system: svc-points
+    ref: "PointsService.refund"
+    module: mod-points-core
+    exposed_by: [fp-points-account]
+    called_by: [svc-aftersale]

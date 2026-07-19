@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>需求影响评估 · 设计说明</title>
+</head>
+<body>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f5f6f8;
+    --surface: #ffffff;
+    --ink: #191c21;
+    --ink-2: #545a64;
+    --ink-3: #878d98;
+    --line: #e2e4e9;
+    --line-soft: #edeff2;
+    --accent: #256abf;
+    --accent-ink: #1c5cab;
+    --biz-bg: #fdf6e3;  --biz-bd: #c9a227;  --biz-ink: #5c4a00;
+    --anc-bg: #fdeee0;  --anc-bd: #c25a00;  --anc-ink: #6b3200;
+    --tec-bg: #e9f5ee;  --tec-bd: #0a7a3d;  --tec-ink: #0a4526;
+    --qa-bg:  #e8f0fb;  --qa-bd:  #2a78d6;  --qa-ink:  #14365c;
+    --heat-0: #ffffff; --heat-1: #cde2fb; --heat-2: #86b6ef; --heat-3: #3987e5; --heat-4: #1c5cab;
+    --heat-ink-1: #17324f; --heat-ink-2: #14263d; --heat-ink-3: #0d1b2c; --heat-ink-4: #f4f8fd;
+    --lv-direct: #d03b3b;
+    --chip-bg: #eef1f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #14161a; --surface: #1d2026;
+      --ink: #e8eaef; --ink-2: #a4aab5; --ink-3: #737a86;
+      --line: #30343c; --line-soft: #262a31;
+      --accent: #5598e7; --accent-ink: #86b6ef;
+      --biz-bg: #2e2a1a; --biz-bd: #c9a227; --biz-ink: #ecd98a;
+      --anc-bg: #2f2318; --anc-bd: #d97a2e; --anc-ink: #f0c39a;
+      --tec-bg: #1a2b21; --tec-bd: #2e9e63; --tec-ink: #a9dfc0;
+      --qa-bg: #1a2635; --qa-bd: #3987e5; --qa-ink: #b9d4f3;
+      --heat-0: #1d2026; --heat-1: #0d366b; --heat-2: #184f95; --heat-3: #256abf; --heat-4: #5598e7;
+      --heat-ink-1: #cfe0f5; --heat-ink-2: #ddeafa; --heat-ink-3: #eef5fd; --heat-ink-4: #0d1b2c;
+      --lv-direct: #e66767;
+      --chip-bg: #262a31;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #14161a; --surface: #1d2026;
+    --ink: #e8eaef; --ink-2: #a4aab5; --ink-3: #737a86;
+    --line: #30343c; --line-soft: #262a31;
+    --accent: #5598e7; --accent-ink: #86b6ef;
+    --biz-bg: #2e2a1a; --biz-bd: #c9a227; --biz-ink: #ecd98a;
+    --anc-bg: #2f2318; --anc-bd: #d97a2e; --anc-ink: #f0c39a;
+    --tec-bg: #1a2b21; --tec-bd: #2e9e63; --tec-ink: #a9dfc0;
+    --qa-bg: #1a2635; --qa-bd: #3987e5; --qa-ink: #b9d4f3;
+    --heat-0: #1d2026; --heat-1: #0d366b; --heat-2: #184f95; --heat-3: #256abf; --heat-4: #5598e7;
+    --heat-ink-1: #cfe0f5; --heat-ink-2: #ddeafa; --heat-ink-3: #eef5fd; --heat-ink-4: #0d1b2c;
+    --lv-direct: #e66767;
+    --chip-bg: #262a31;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --page: #f5f6f8; --surface: #ffffff;
+    --ink: #191c21; --ink-2: #545a64; --ink-3: #878d98;
+    --line: #e2e4e9; --line-soft: #edeff2;
+    --accent: #256abf; --accent-ink: #1c5cab;
+    --biz-bg: #fdf6e3; --biz-bd: #c9a227; --biz-ink: #5c4a00;
+    --anc-bg: #fdeee0; --anc-bd: #c25a00; --anc-ink: #6b3200;
+    --tec-bg: #e9f5ee; --tec-bd: #0a7a3d; --tec-ink: #0a4526;
+    --qa-bg: #e8f0fb; --qa-bd: #2a78d6; --qa-ink: #14365c;
+    --heat-0: #ffffff; --heat-1: #cde2fb; --heat-2: #86b6ef; --heat-3: #3987e5; --heat-4: #1c5cab;
+    --heat-ink-1: #17324f; --heat-ink-2: #14263d; --heat-ink-3: #0d1b2c; --heat-ink-4: #f4f8fd;
+    --lv-direct: #d03b3b;
+    --chip-bg: #eef1f5;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px; line-height: 1.75;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 48px 28px 80px; display: flex; flex-direction: column; gap: 52px; }
+
+  header .kicker { font-size: 12px; letter-spacing: .18em; color: var(--accent-ink); text-transform: uppercase; font-weight: 600; }
+  h1 { font-family: "Songti SC", "Noto Serif SC", "SimSun", serif; font-size: 33px; font-weight: 700; margin: 8px 0 10px; text-wrap: balance; }
+  header p.lede { max-width: 68ch; color: var(--ink-2); margin: 0; }
+
+  section { display: flex; flex-direction: column; gap: 14px; }
+  .fig-eyebrow { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .fig-eyebrow .no { font-family: "Songti SC", "Noto Serif SC", "SimSun", serif; font-size: 13px; letter-spacing: .12em; color: var(--ink-3); white-space: nowrap; }
+  h2 { font-family: "Songti SC", "Noto Serif SC", "SimSun", serif; font-size: 22px; margin: 0; font-weight: 700; }
+  .q { font-size: 13px; color: var(--ink-3); margin-left: auto; text-align: right; }
+  section > p.intro { max-width: 72ch; color: var(--ink-2); margin: 0; }
+
+  .figure { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 26px; overflow-x: auto; }
+  .figure pre.mermaid { margin: 0; display: flex; justify-content: center; }
+
+  .notes { max-width: 76ch; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .notes li { padding-left: 18px; position: relative; color: var(--ink-2); font-size: 14px; }
+  .notes li::before { content: "▸"; position: absolute; left: 0; color: var(--accent); }
+  .notes b { color: var(--ink); font-weight: 600; }
+
+  /* ============ 手绘图公共元件 ============ */
+  .node {
+    border-radius: 7px; padding: 12px 16px; border: 1.5px solid var(--line);
+    background: var(--surface); text-align: center;
+  }
+  .node .t { font-weight: 700; font-size: 14.5px; line-height: 1.45; }
+  .node .d { font-size: 12.5px; color: var(--ink-2); line-height: 1.55; margin-top: 3px; }
+  .node .eg { font-size: 12px; margin-top: 7px; padding-top: 6px; border-top: 1px dashed var(--line); color: var(--ink-3); }
+  .node .eg code { font-size: 11.5px; }
+  .n-biz { background: var(--biz-bg); border-color: var(--biz-bd); }
+  .n-biz .t { color: var(--biz-ink); }
+  .n-anc { background: var(--anc-bg); border-color: var(--anc-bd); }
+  .n-anc .t { color: var(--anc-ink); }
+  .n-tec { background: var(--tec-bg); border-color: var(--tec-bd); }
+  .n-tec .t { color: var(--tec-ink); }
+  .n-qa  { background: var(--qa-bg); border-color: var(--qa-bd); }
+  .n-qa .t { color: var(--qa-ink); }
+
+  .varrow { display: flex; flex-direction: column; align-items: center; padding: 2px 0; }
+  .varrow .lbl { font-size: 12px; color: var(--ink-3); background: var(--surface); padding: 0 6px; margin: -4px 0; z-index: 1; }
+  .varrow .stem { width: 2px; height: 14px; background: var(--ink-3); }
+  .varrow .head { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid var(--ink-3); }
+
+  .harrow { display: flex; align-items: center; justify-content: center; min-width: 56px; flex: none; position: relative; }
+  .harrow .stem { height: 2px; flex: 1; background: var(--ink-3); }
+  .harrow .head { width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 7px solid var(--ink-3); }
+  .harrow .lbl { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; border-radius: 3px; padding: 1px 7px; }
+  .b-manual { color: var(--biz-ink); background: var(--biz-bg); border: 1px solid var(--biz-bd); }
+  .b-semi   { color: var(--anc-ink); background: var(--anc-bg); border: 1px solid var(--anc-bd); }
+  .b-auto   { color: var(--tec-ink); background: var(--tec-bg); border: 1px solid var(--tec-bd); }
+
+  /* ============ 总览图（图一） ============ */
+  .overview { display: flex; align-items: stretch; gap: 0; min-width: 900px; }
+  .ov-col { display: flex; flex-direction: column; gap: 10px; flex: 1; justify-content: center; }
+  .ov-col > .col-title { font-size: 12px; font-weight: 700; letter-spacing: .1em; color: var(--ink-3); text-align: center; }
+  .ov-outputs { display: flex; flex-direction: column; gap: 12px; flex: 1.15; justify-content: center; }
+
+  /* ============ 双视角主图（图二） ============ */
+  .dual { min-width: 920px; }
+  .dual-cols { display: grid; grid-template-columns: 1fr 150px 1fr; gap: 0; align-items: stretch; }
+  .lane { border: 1.5px dashed var(--line); border-radius: 10px; padding: 16px 18px 18px; display: flex; flex-direction: column; }
+  .lane.biz { border-color: var(--biz-bd); background: color-mix(in srgb, var(--biz-bg) 34%, var(--surface)); }
+  .lane.tec { border-color: var(--tec-bd); background: color-mix(in srgb, var(--tec-bg) 34%, var(--surface)); }
+  .lane-head { text-align: center; margin-bottom: 12px; }
+  .lane-head .h { font-weight: 800; font-size: 15px; }
+  .lane-head .s { font-size: 12px; color: var(--ink-2); }
+  .lane.biz .lane-head .h { color: var(--biz-ink); }
+  .lane.tec .lane-head .h { color: var(--tec-ink); }
+  .bridge { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 0 8px; }
+  .bridge .harrow { width: 100%; }
+  .dual-bottom { display: grid; grid-template-columns: 1fr 150px 1fr; gap: 0; margin-top: 14px; }
+
+  /* ============ 数据分工（图三） ============ */
+  .schema-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .schema-card { display: flex; flex-direction: column; gap: 8px; }
+  .schema-card h4 { margin: 0; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  pre.code {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
+    font-size: 12.5px; line-height: 1.6; margin: 0; flex: 1;
+    background: var(--chip-bg); border: 1px solid var(--line);
+    border-radius: 6px; padding: 14px 16px; overflow-x: auto; color: var(--ink);
+  }
+  pre.code .cm { color: var(--ink-3); }
+
+  /* ============ 热力图 ============ */
+  .heat-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; font-size: 13px; color: var(--ink-2); margin-bottom: 14px; }
+  .heat-legend { display: inline-flex; align-items: center; gap: 4px; }
+  .heat-legend .cellkey { width: 26px; height: 15px; border-radius: 3px; border: 1px solid var(--line); }
+  .heat-scroll { overflow-x: auto; }
+  table.heat { border-collapse: separate; border-spacing: 2px; font-size: 12.5px; min-width: 640px; }
+  table.heat th { font-weight: 600; color: var(--ink-2); padding: 4px 8px; text-align: center; white-space: nowrap; }
+  table.heat th.rowh { text-align: left; font-weight: 500; color: var(--ink); }
+  table.heat td.domain { font-family: "Songti SC", "Noto Serif SC", "SimSun", serif; font-weight: 700; color: var(--ink-3); font-size: 12px; letter-spacing: .1em; padding: 14px 8px 2px; border: none; }
+  table.heat td.cell { width: 52px; height: 30px; text-align: center; border-radius: 4px; font-variant-numeric: tabular-nums; font-weight: 600; cursor: default; }
+  table.heat td.v0 { background: var(--heat-0); color: transparent; border: 1px solid var(--line-soft); }
+  table.heat td.v1 { background: var(--heat-1); color: var(--heat-ink-1); }
+  table.heat td.v2 { background: var(--heat-2); color: var(--heat-ink-2); }
+  table.heat td.v3 { background: var(--heat-3); color: var(--heat-ink-3); }
+  table.heat td.v4 { background: var(--heat-4); color: var(--heat-ink-4); }
+  table.heat td.cell:hover { outline: 2px solid var(--accent); }
+  table.heat td.total { text-align: right; padding: 0 10px; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 600; }
+  .crit { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: var(--lv-direct); border: 1px solid var(--lv-direct); border-radius: 3px; padding: 0 5px; margin-left: 7px; vertical-align: 1px; }
+  #tip { position: fixed; pointer-events: none; z-index: 10; display: none; background: var(--ink); color: var(--page); font-size: 12.5px; padding: 6px 10px; border-radius: 5px; white-space: nowrap; }
+
+  /* ============ 决策表 ============ */
+  table.decisions { border-collapse: collapse; width: 100%; font-size: 14px; }
+  table.decisions th, table.decisions td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  table.decisions th { color: var(--ink-3); font-weight: 600; font-size: 12.5px; letter-spacing: .08em; }
+  table.decisions td:first-child { white-space: nowrap; font-weight: 600; }
+  table.decisions td:nth-child(2) { color: var(--ink-2); }
+
+  code { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace; font-size: .88em; background: var(--chip-bg); border-radius: 4px; padding: 1px 6px; }
+  footer { color: var(--ink-3); font-size: 13px; border-top: 1px solid var(--line); padding-top: 18px; }
+
+  /* ============ 功能地图 ============ */
+  .fmap { display: flex; gap: 10px; min-width: 940px; align-items: stretch; }
+  .dom { flex: 1; min-width: 0; border: 1.5px solid var(--biz-bd); border-radius: 9px; background: color-mix(in srgb, var(--biz-bg) 30%, var(--surface)); display: flex; flex-direction: column; overflow: hidden; }
+  .dom-head { padding: 10px 12px 8px; border-bottom: 1px solid color-mix(in srgb, var(--biz-bd) 40%, transparent); }
+  .dom-head .dn { font-family: "Songti SC", "Noto Serif SC", "SimSun", serif; font-weight: 800; font-size: 15.5px; color: var(--biz-ink); }
+  .dom-head .dd { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; }
+  .dom-body { padding: 10px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .cap { border: 1px dashed color-mix(in srgb, var(--biz-bd) 55%, transparent); border-radius: 7px; padding: 8px; display: flex; flex-direction: column; gap: 7px; }
+  .cap-head { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; color: var(--ink-2); }
+  .fp-card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+  .fp-card .fn { font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .fp-card .fid { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 10.5px; color: var(--ink-3); }
+  .fp-card .kws { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+  .fp-card .kw { font-size: 10.5px; color: var(--ink-2); background: var(--chip-bg); border-radius: 3px; padding: 0 6px; }
+  .fp-card .sys { font-size: 10.5px; color: var(--tec-ink); background: var(--tec-bg); border: 1px solid color-mix(in srgb, var(--tec-bd) 50%, transparent); border-radius: 3px; padding: 0 6px; margin-top: 5px; display: inline-block; }
+  .hot-mini { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--lv-direct); flex: none; }
+  .trigger-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+  .trigger-strip .tl { font-size: 12.5px; font-weight: 700; color: var(--ink-2); margin-right: 4px; }
+  .tlink { font-size: 12.5px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; background: var(--surface); color: var(--ink-2); }
+  .tlink b { color: var(--ink); font-weight: 600; }
+  .tlink .x { color: var(--anc-bd); font-weight: 700; }
+
+  /* ============ 实例卡片 ============ */
+  .case { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: hidden; }
+  .case + .case { margin-top: 22px; }
+  .case-head { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .case-head .cid { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 12.5px; color: var(--ink-3); }
+  .case-head .ct { font-weight: 800; font-size: 16px; }
+  .case-body { padding: 6px 20px 18px; display: flex; flex-direction: column; }
+  .step { display: grid; grid-template-columns: 118px 1fr; gap: 14px; padding: 13px 0; }
+  .step + .step { border-top: 1px dashed var(--line-soft); }
+  .step-label { font-size: 12.5px; font-weight: 700; color: var(--ink-2); line-height: 1.5; padding-top: 2px; }
+  .step-label .sn { display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--page); font-size: 11.5px; text-align: center; line-height: 20px; margin-right: 6px; font-weight: 700; }
+  .step-body { font-size: 13.5px; color: var(--ink-2); min-width: 0; }
+  .quote { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; color: var(--ink-2); font-size: 13.5px; }
+  table.mini { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.mini th { text-align: left; color: var(--ink-3); font-weight: 600; font-size: 12px; padding: 3px 10px 3px 0; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  table.mini td { padding: 5px 10px 5px 0; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  table.mini tr:last-child td { border-bottom: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip { font-size: 12.5px; border: 1px solid var(--line); background: var(--chip-bg); border-radius: 999px; padding: 2px 12px; color: var(--ink-2); }
+  .chip.hot { border-color: var(--lv-direct); color: var(--lv-direct); background: transparent; }
+  .miss { color: var(--lv-direct); font-weight: 700; }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="kicker">Demand Impact Assessment · Design</div>
+  <h1>需求影响评估 · 设计说明</h1>
+  <p class="lede">北极星：<b>端到端质量提效</b>。需求进来后做两列评估 —— 第一列把原始需求解构成辅助资料，第二列基于「需求 + 辅助资料 + 知识图谱 + 功能地图」输出双视角影响面：<b>业务视角</b>关联到哪些系统功能，<b>技术视角</b>哪些接口、哪些模块被影响。</p>
+</header>
+
+<!-- ============ 图一 总览 ============ -->
+<section id="fig1">
+  <div class="fig-eyebrow">
+    <span class="no">图一</span>
+    <h2>总览：两列评估、两个输出</h2>
+    <span class="q">从左往右读，就是一个需求的旅程</span>
+  </div>
+  <div class="figure">
+    <div class="overview">
+
+      <div class="ov-col">
+        <div class="col-title">原始需求</div>
+        <div class="node">
+          <div class="t">需求文档</div>
+          <div class="d">常规 PRD / markdown</div>
+        </div>
+        <div class="node">
+          <div class="t">或者，只有一个 Demo</div>
+          <div class="d">走查记录：页面 · 交互 · 状态</div>
+        </div>
+      </div>
+
+      <div class="harrow"><div class="stem"></div><div class="head"></div></div>
+
+      <div class="ov-col">
+        <div class="col-title">第一列 · 需求解构</div>
+        <div class="node">
+          <div class="t">拆出辅助资料</div>
+          <div class="d">用户旅程 · 用户故事 · 泳道图<br>术语表 · 假设 · 待澄清问题</div>
+          <div class="eg">LLM 生成初稿，BA 审校后定稿</div>
+        </div>
+      </div>
+
+      <div class="harrow"><div class="stem"></div><div class="head"></div></div>
+
+      <div class="ov-col">
+        <div class="col-title">第二列 · 影响评估</div>
+        <div class="node">
+          <div class="t">需求 + 辅助资料</div>
+          <div class="t" style="font-weight:400; font-size:13px">×</div>
+          <div class="t">知识图谱 + 功能地图</div>
+          <div class="d">业务图谱（人工养）<br>技术图谱（代码生）</div>
+        </div>
+      </div>
+
+      <div class="harrow"><div class="stem"></div><div class="head"></div></div>
+
+      <div class="ov-outputs">
+        <div class="col-title" style="font-size:12px; font-weight:700; letter-spacing:.1em; color:var(--ink-3); text-align:center">输出</div>
+        <div class="node n-biz">
+          <div class="t">输出一 · 业务视角</div>
+          <div class="d">关联到了哪些<b>系统功能</b><br>（功能点 · 系统 · 团队）</div>
+        </div>
+        <div class="node n-tec">
+          <div class="t">输出二 · 技术视角</div>
+          <div class="d">哪些<b>接口</b>、哪些<b>模块</b>被影响<br>（含调用链波及）</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <ul class="notes">
+    <li><b>第一列的产物有两个用途</b>：给人看（开发在动手前理解需求全貌），给机器用（用户故事带关键词，是第二列匹配的输入）。</li>
+    <li><b>第二列的两个输出海拔不同</b>：业务视角给产品和评审会看「动了哪些业务」；技术视角给研发和测试看「改哪、测哪」。</li>
+  </ul>
+</section>
+
+<!-- ============ 图二 双视角 ============ -->
+<section id="fig2">
+  <div class="fig-eyebrow">
+    <span class="no">图二</span>
+    <h2>第二列拆开看：双视角怎么算出来</h2>
+    <span class="q">左右两条链，中间一座桥；示例：「订单积分抵扣」</span>
+  </div>
+  <p class="intro">左边业务链自上而下算出「输出一」，右边技术链自上而下算出「输出二」。两条链靠中间的<b>锚点</b>（功能点 ↔ 接口的对照表）连接 —— 这是全图唯一需要人工签字的一条边，锚对了，技术视角就是自动推导。</p>
+  <div class="figure">
+    <div class="dual">
+      <div class="dual-cols">
+
+        <!-- 业务链 -->
+        <div class="lane biz">
+          <div class="lane-head">
+            <div class="h">业务视角 → 输出一</div>
+            <div class="s">在业务图谱上走</div>
+          </div>
+          <div class="node">
+            <div class="t">用户故事</div>
+            <div class="eg">「我希望看到积分抵扣金额及分摊明细」<br>keywords: 计价 · 抵扣 · 分摊</div>
+          </div>
+          <div class="varrow"><div class="stem"></div><div class="lbl">关键词匹配（可解释，列出命中依据）</div><div class="stem"></div><div class="head"></div></div>
+          <div class="node n-biz">
+            <div class="t">功能点</div>
+            <div class="eg"><code>fp-order-price</code> 订单计价 · 高关键度</div>
+          </div>
+          <div class="varrow"><div class="stem"></div><div class="lbl">图谱四层传播：直接 · 流程 · 数据 · 依赖</div><div class="stem"></div><div class="head"></div></div>
+          <div class="node n-biz">
+            <div class="t">系统功能清单</div>
+            <div class="eg">订单服务（交易组）· 积分服务（营销组）<br>下游：发货 · 积分发放 · 售后退款</div>
+          </div>
+        </div>
+
+        <!-- 桥 -->
+        <div class="bridge">
+          <div class="node n-anc" style="width:100%">
+            <div class="t">锚点</div>
+            <div class="d">功能点 ↔ 接口</div>
+            <div class="eg">LLM 出候选<br>域 owner 确认</div>
+          </div>
+          <div class="harrow"><div class="stem"></div><div class="head"></div></div>
+        </div>
+
+        <!-- 技术链 -->
+        <div class="lane tec">
+          <div class="lane-head">
+            <div class="h">技术视角 → 输出二</div>
+            <div class="s">在技术图谱上走（自动提取的）</div>
+          </div>
+          <div class="node n-tec">
+            <div class="t">接口</div>
+            <div class="eg"><code>POST /api/order/price</code></div>
+          </div>
+          <div class="varrow"><div class="stem"></div><div class="lbl">实现于（来自 Swagger / AI 代码图谱）</div><div class="stem"></div><div class="head"></div></div>
+          <div class="node n-tec">
+            <div class="t">模块</div>
+            <div class="eg"><code>order-service/pricing</code>（服务内一级目录）</div>
+          </div>
+          <div class="varrow"><div class="stem"></div><div class="lbl">模块依赖 1 跳 + 服务间调用链 ≤2 跳</div><div class="stem"></div><div class="head"></div></div>
+          <div class="node n-tec">
+            <div class="t">波及面</div>
+            <div class="eg">依赖模块 <code>order-service/core</code><br>调用链下游 <code>POST /api/points/freeze</code></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部质量动作 -->
+      <div class="dual-bottom">
+        <div class="varrow" style="grid-column:1"><div class="stem"></div><div class="head"></div></div>
+        <div></div>
+        <div class="varrow" style="grid-column:3"><div class="stem"></div><div class="head"></div></div>
+      </div>
+      <div class="dual-cols" style="margin-top:2px">
+        <div class="node n-qa">
+          <div class="t">评审会材料</div>
+          <div class="d">影响图 · 涉及团队 · 假设与待澄清 · 跨团队协作建议</div>
+        </div>
+        <div></div>
+        <div class="node n-qa">
+          <div class="t">质量动作</div>
+          <div class="d">接口测试范围 · 代码评审关注点<br>回归用例集推荐（Roadmap：接口↔用例映射）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ul class="notes">
+    <li><b>两条链都「有界」</b>：业务侧触发链 ≤3 跳、数据影响 1 跳；技术侧模块依赖 1 跳、调用链 ≤2 跳 —— 要的是「值得看一眼的范围」，不是全图可达性。</li>
+    <li><b>锚点是精度闸门</b>：锚错一条 = 技术视角错一片，所以 LLM 只出候选、域 owner 签字后才生效；未确认的锚点不参与分析。</li>
+    <li><b>故事没匹配到功能点 ≠ 失败</b>：标记为「疑似新功能点」，评审后回补业务图谱 —— 地图靠每个需求持续生长。</li>
+  </ul>
+</section>
+
+<!-- ============ 图三 功能地图 ============ -->
+<section id="fmap">
+  <div class="fig-eyebrow">
+    <span class="no">图三</span>
+    <h2>功能地图长什么样</h2>
+    <span class="q">三级结构：业务域 → 业务能力 → 功能点；下面是完整示例（电商域，仓库真实数据）</span>
+  </div>
+  <p class="intro">功能地图是<b>节点的目录</b>——业务和研发共用的一张「我们有什么功能」的地图；知识图谱是<b>节点之间的关系</b>（实现/读写/触发/依赖），叠在地图上、影响传播时才用。先定义结构，再看整张示例地图。</p>
+
+  <div class="figure" style="padding:8px 22px 14px">
+    <table class="decisions">
+      <thead><tr><th>层级</th><th>数量级</th><th>关键字段</th><th>粒度判断标准</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>L1 业务域</td>
+          <td>5 ~ 10 个</td>
+          <td><code>id</code> <code>name</code> <code>description</code></td>
+          <td>一个域 ≈ 一组紧密协作的团队的业务边界；一年难得变一次</td>
+        </tr>
+        <tr>
+          <td>L2 业务能力</td>
+          <td>每域 1 ~ 5 个</td>
+          <td><code>id</code> <code>name</code></td>
+          <td>用户或运营能说出口的一件「事」（下单、支付、退款）；季度级变化</td>
+        </tr>
+        <tr>
+          <td>L3 功能点</td>
+          <td>全图百级</td>
+          <td><code>id</code> <code>name</code> <code>keywords</code> <code>implemented_by</code> <code>reads/writes</code> <code>triggers</code> <code>criticality</code></td>
+          <td><b>需求评审时能指着说「改它」的最小单元</b>：写得出 keywords、锚得到 1~3 个接口；随需求增长</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="figure">
+    <div class="fmap">
+
+      <div class="dom">
+        <div class="dom-head"><div class="dn">用户域</div><div class="dd">账户 · 登录 · 会员体系</div></div>
+        <div class="dom-body">
+          <div class="cap"><div class="cap-head">账户</div>
+            <div class="fp-card"><div class="fn"><span class="hot-mini" title="高关键度"></span>登录注册 <span class="fid">fp-login</span></div>
+              <div class="kws"><span class="kw">登录</span><span class="kw">注册</span><span class="kw">验证码</span></div>
+              <span class="sys">用户服务</span></div>
+            <div class="fp-card"><div class="fn">会员等级 <span class="fid">fp-member-level</span></div>
+              <div class="kws"><span class="kw">会员</span><span class="kw">等级</span><span class="kw">成长值</span></div>
+              <span class="sys">用户服务</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dom">
+        <div class="dom-head"><div class="dn">营销域</div><div class="dd">优惠券 · 积分等营销工具</div></div>
+        <div class="dom-body">
+          <div class="cap"><div class="cap-head">优惠券</div>
+            <div class="fp-card"><div class="fn">优惠券使用 <span class="fid">fp-coupon-apply</span></div>
+              <div class="kws"><span class="kw">优惠券</span><span class="kw">满减</span></div>
+              <span class="sys">营销服务</span></div>
+          </div>
+          <div class="cap"><div class="cap-head">积分体系</div>
+            <div class="fp-card"><div class="fn"><span class="hot-mini"></span>积分账户管理 <span class="fid">fp-points-account</span></div>
+              <div class="kws"><span class="kw">积分账户</span><span class="kw">积分冻结</span><span class="kw">积分回退</span></div>
+              <span class="sys">积分服务</span></div>
+            <div class="fp-card"><div class="fn">积分获取 <span class="fid">fp-points-earn</span></div>
+              <div class="kws"><span class="kw">积分发放</span><span class="kw">返积分</span></div>
+              <span class="sys">积分服务</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dom">
+        <div class="dom-head"><div class="dn">交易域</div><div class="dd">购物车 · 下单 · 计价 · 支付</div></div>
+        <div class="dom-body">
+          <div class="cap"><div class="cap-head">购物车</div>
+            <div class="fp-card"><div class="fn">购物车管理 <span class="fid">fp-cart</span></div>
+              <div class="kws"><span class="kw">购物车</span><span class="kw">加购</span></div>
+              <span class="sys">购物车服务</span></div>
+          </div>
+          <div class="cap"><div class="cap-head">下单</div>
+            <div class="fp-card"><div class="fn"><span class="hot-mini"></span>提交订单 <span class="fid">fp-order-submit</span></div>
+              <div class="kws"><span class="kw">下单</span><span class="kw">结算</span><span class="kw">确认订单</span></div>
+              <span class="sys">订单服务</span></div>
+            <div class="fp-card"><div class="fn"><span class="hot-mini"></span>订单计价 <span class="fid">fp-order-price</span></div>
+              <div class="kws"><span class="kw">计价</span><span class="kw">抵扣</span><span class="kw">分摊</span><span class="kw">运费</span></div>
+              <span class="sys">订单服务</span></div>
+          </div>
+          <div class="cap"><div class="cap-head">支付</div>
+            <div class="fp-card"><div class="fn">支付单创建 <span class="fid">fp-pay-create</span></div>
+              <div class="kws"><span class="kw">支付</span><span class="kw">收银台</span></div>
+              <span class="sys">支付服务</span></div>
+            <div class="fp-card"><div class="fn"><span class="hot-mini"></span>支付回调处理 <span class="fid">fp-pay-callback</span></div>
+              <div class="kws"><span class="kw">支付回调</span><span class="kw">支付成功</span></div>
+              <span class="sys">支付服务</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dom">
+        <div class="dom-head"><div class="dn">履约域</div><div class="dd">发货与物流</div></div>
+        <div class="dom-body">
+          <div class="cap"><div class="cap-head">发货</div>
+            <div class="fp-card"><div class="fn">发货 <span class="fid">fp-ship</span></div>
+              <div class="kws"><span class="kw">发货</span><span class="kw">出库</span></div>
+              <span class="sys">履约服务</span></div>
+            <div class="fp-card"><div class="fn">物流跟踪 <span class="fid">fp-logistics-track</span></div>
+              <div class="kws"><span class="kw">物流</span><span class="kw">轨迹</span></div>
+              <span class="sys">履约服务</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dom">
+        <div class="dom-head"><div class="dn">售后域</div><div class="dd">退款 · 退货 · 售后进度</div></div>
+        <div class="dom-body">
+          <div class="cap"><div class="cap-head">退款退货</div>
+            <div class="fp-card"><div class="fn">售后申请 <span class="fid">fp-refund-apply</span></div>
+              <div class="kws"><span class="kw">售后</span><span class="kw">退货</span><span class="kw">仅退款</span></div>
+              <span class="sys">售后服务</span></div>
+            <div class="fp-card"><div class="fn">售后审核 <span class="fid">fp-refund-audit</span></div>
+              <div class="kws"><span class="kw">售后审核</span></div>
+              <span class="sys">售后服务</span></div>
+            <div class="fp-card"><div class="fn"><span class="hot-mini"></span>退款执行 <span class="fid">fp-refund-money</span></div>
+              <div class="kws"><span class="kw">退款</span><span class="kw">原路退回</span><span class="kw">退积分</span></div>
+              <span class="sys">售后服务</span></div>
+            <div class="fp-card"><div class="fn">售后进度查询 <span class="fid">fp-aftersale-progress</span></div>
+              <div class="kws"><span class="kw">售后进度</span><span class="kw">进度查询</span></div>
+              <span class="sys">售后服务</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="trigger-strip">
+      <span class="tl">跨功能点触发链路（图谱边，不画在地图上，影响传播时用）：</span>
+      <span class="tlink"><b>提交订单</b> <span class="x">⇢</span> <b>支付单创建</b></span>
+      <span class="tlink"><b>支付回调处理</b> <span class="x">⇢</span> <b>积分获取</b>（跨域：交易→营销）</span>
+      <span class="tlink"><b>支付回调处理</b> <span class="x">⇢</span> <b>发货</b>（跨域：交易→履约）</span>
+      <span class="tlink"><b>售后审核</b> <span class="x">⇢</span> <b>退款执行</b></span>
+    </div>
+    <div class="heat-toolbar" style="margin:12px 0 0">
+      <span><span class="hot-mini" style="vertical-align:0"></span>&nbsp;= 高关键度（criticality: high）</span>
+      <span><span class="sys" style="vertical-align:0">系统</span>&nbsp;= implemented_by 实现系统</span>
+      <span><span class="kw" style="vertical-align:0; font-size:11px; padding:0 6px; background:var(--chip-bg); border-radius:3px">关键词</span>&nbsp;= 匹配用 keywords</span>
+    </div>
+  </div>
+
+  <ul class="notes">
+    <li><b>这张地图就是 <code>data/panorama/domains.yaml</code> 的可视化</b>：5 个业务域 / 8 个能力 / 16 个功能点，接入你们业务时整体替换成自己的域。</li>
+    <li><b>功能点的三件套决定了它能不能用</b>：keywords 决定需求匹配得上（越全命中率越高）、implemented_by 决定业务视角能落到系统、锚点决定技术视角能下钻到接口。</li>
+    <li><b>初次梳理别求全</b>：先覆盖改动最频繁的 1~2 个域，keywords 写足；其余靠「未命中 → 回补」机制随需求补齐 —— 例二的「售后催办」就是这样长出来的。</li>
+    <li><b>每个功能点还挂着 reads/writes 数据实体与 triggers 下游</b>（地图上不展示，避免噪声）—— 它们是知识图谱的边，四层影响传播全靠它们。</li>
+  </ul>
+</section>
+
+<!-- ============ 图四 数据分工 ============ -->
+<section id="fig3">
+  <div class="fig-eyebrow">
+    <span class="no">图四</span>
+    <h2>三层数据资产：谁来养、怎么养</h2>
+    <span class="q">颜色与图二对应；唯一长期人工投入的是中间的锚点</span>
+  </div>
+  <div class="figure">
+    <div class="schema-grid">
+      <div class="schema-card">
+        <h4>业务图谱<span class="badge b-manual">人工 YAML · PR 评审</span></h4>
+        <pre class="code"><span class="cm"># data/panorama/domains.yaml（已实现）</span>
+- id: fp-order-price
+  name: 订单计价
+  keywords: [计价, 抵扣, 分摊]
+  implemented_by: [svc-order]
+  writes: [ent-order]
+  triggers: [fp-pay-create]
+  criticality: high</pre>
+        <p class="intro" style="font-size:13px">业务语义机器提不出来，人工维护；改图走 PR，CI 校验引用完整性。</p>
+      </div>
+      <div class="schema-card">
+        <h4>锚点<span class="badge b-semi">LLM 建议 + 人工确认</span></h4>
+        <pre class="code"><span class="cm"># data/anchors/fp-api.yaml（设计中）</span>
+- fp: fp-order-price
+  apis: [api-order-price]
+  confirmed_by: 交易组
+  note: 计价逻辑收口在该接口
+
+<span class="cm"># 数量与接口同量级，</span>
+<span class="cm"># 一次梳理，随需求增量维护</span></pre>
+        <p class="intro" style="font-size:13px">LLM 按「功能点名/关键词 vs 接口路径/注释」相似度出候选，域 owner 确认后合入。</p>
+      </div>
+      <div class="schema-card">
+        <h4>技术图谱<span class="badge b-auto">自动提取 · 禁止手改</span></h4>
+        <pre class="code"><span class="cm"># data/techmap/apis.yaml（提取器生成）</span>
+apis:
+- id: api-order-price
+  method: POST
+  path: /api/order/price
+  system: svc-order
+  module: mod-order-pricing
+  calls: [api-points-freeze]
+  source: swagger
+modules:
+- id: mod-order-pricing
+  path: order-service/pricing
+  depends_on: [mod-order-core]
+  source: code-graph</pre>
+        <p class="intro" style="font-size:13px">双源提取：有 Swagger 的走文档解析，没有的由 LLM 扫代码仓库生成；冲突时 Swagger 优先。CI 定期重提取，手改会被覆盖 —— 腐化从机制上消除。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 实例 ============ -->
+<section id="examples">
+  <div class="fig-eyebrow">
+    <span class="no">实例</span>
+    <h2>两个完整走查：从原始需求到质量动作</h2>
+    <span class="q">例一是文档型需求；例二是「只有 demo」+ 触发新功能点回补</span>
+  </div>
+  <p class="intro">业务视角部分是仓库里<b>已实现、可运行</b>的真实输出（见 <code>examples/out/</code>）；技术视角部分为设计稿演示 —— 锚点与技术图谱建成后由同一条命令自动产出。</p>
+
+  <!-- 例一 -->
+  <div class="case">
+    <div class="case-head">
+      <span class="cid">REQ-2026-001</span>
+      <span class="ct">订单积分抵扣</span>
+      <span class="badge b-manual">document · 需求文档</span>
+    </div>
+    <div class="case-body">
+      <div class="step">
+        <div class="step-label"><span class="sn">1</span>原始需求<br>（摘录）</div>
+        <div class="step-body">
+          <div class="quote">用户下单时可用积分抵扣，100 积分 = 1 元，单笔最多抵扣订单金额 30%；抵扣金额需在多商品间分摊；下单冻结、支付扣减、超时解冻；<b>退款时按分摊比例回退积分</b>。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="sn">2</span>第一列<br>解构产物（节选）</div>
+        <div class="step-body">
+          <table class="mini">
+            <tr><th>用户故事</th><th>keywords</th></tr>
+            <tr><td>US-2 订单计价展示抵扣分摊</td><td><code>计价</code> <code>分摊</code> <code>抵扣</code> <code>优惠</code></td></tr>
+            <tr><td>US-3 下单冻结与支付扣减积分</td><td><code>积分冻结</code> <code>积分账户</code> <code>支付成功</code></td></tr>
+            <tr><td>US-4 退款回退积分</td><td><code>退款</code> <code>积分回退</code> <code>积分账户</code></td></tr>
+          </table>
+          <div style="margin-top:8px">另产出：用户旅程 1 条（结算→提交→支付→退款）、泳道图、假设 2 条、<b>待澄清 3 条</b>（如「部分退款按行分摊还是按比例？」）。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="sn">3</span>输出一<br>业务视角</div>
+        <div class="step-body">
+          <table class="mini">
+            <tr><th>命中功能点</th><th>匹配依据（得分）</th><th>系统 / 团队</th></tr>
+            <tr><td>订单计价 <span class="crit">高关键度</span></td><td>订单计价·计价·抵扣·分摊（8.0）</td><td>订单服务 / 交易组</td></tr>
+            <tr><td>积分账户管理 <span class="crit">高关键度</span></td><td>积分·积分账户·积分冻结（3.0）</td><td>积分服务 / 营销组</td></tr>
+            <tr><td>退款执行 <span class="crit">高关键度</span></td><td>退款·退积分（2.0）</td><td>售后服务 / 售后组</td></tr>
+          </table>
+          <div class="chips" style="margin-top:8px">
+            <span class="chip">流程下游：积分发放 · 发货（冒烟）</span>
+            <span class="chip">数据影响：订单 · 积分账户 · 积分流水的其他读方</span>
+            <span class="chip hot">跨 6 团队 → 评审拉通排期与接口契约</span>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="sn">4</span>输出二<br>技术视角</div>
+        <div class="step-body">
+          <table class="mini">
+            <tr><th>接口</th><th>模块（一级目录）</th><th>来源</th></tr>
+            <tr><td><code>POST /api/order/price</code> 计价</td><td><code>order-service/pricing</code></td><td>swagger</td></tr>
+            <tr><td><code>POST /api/points/freeze</code> 冻结（调用链下游）</td><td><code>points-service/account</code></td><td>swagger</td></tr>
+            <tr><td><code>POST /api/refund/execute</code> 退款执行</td><td><code>aftersale-service/refund</code></td><td>code-graph</td></tr>
+          </table>
+          <div style="margin-top:8px">模块依赖波及：<code>order-service/core</code>（被 pricing 依赖，金额字段变更需同步）。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="sn">5</span>质量动作</div>
+        <div class="step-body">
+          <div class="chips">
+            <span class="chip">接口测试范围：上述 3 接口 + 调用链回归</span>
+            <span class="chip">代码评审关注：pricing 分摊精度（无一分钱误差）</span>
+            <span class="chip">3 个高关键度功能点 → 灰度开关 + 监控告警</span>
+            <span class="chip">回归用例集推荐（Roadmap：接口↔用例映射后自动给出）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 例二 -->
+  <div class="case">
+    <div class="case-head">
+      <span class="cid">REQ-2026-002</span>
+      <span class="ct">售后进度可视化</span>
+      <span class="badge b-semi">demo · 没有文档，只有一个 H5 演示</span>
+    </div>
+    <div class="case-body">
+      <div class="step">
+        <div class="step-label"><span class="sn">1</span>原始需求<br>（demo 走查记录）</div>
+        <div class="step-body">
+          <div class="quote">售后详情页：四步进度条（提交申请 → 商家审核 → 买家退货/物流揽收 → 退款到账），每步带时间戳；退货步骤展示快递单号与物流轨迹；底部有<b>「催一催」按钮</b>，点击 toast「已提醒商家」。demo 未演示：仅退款时进度条形态、售后被拒绝的状态。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="sn">2</span>第一列<br>解构产物（节选）</div>
+        <div class="step-body">
+          <table class="mini">
+            <tr><th>用户故事（逆向还原）</th><th>keywords</th></tr>
+            <tr><td>US-1 查看售后处理进度</td><td><code>售后进度</code> <code>进度查询</code> <code>售后详情</code></td></tr>
+            <tr><td>US-2 查看退货物流轨迹</td><td><code>物流</code> <code>轨迹</code> <code>快递</code></td></tr>
+            <tr><td>US-3 催促商家处理</td><td><code>催一催</code> <code>提醒商家</code></td></tr>
+          </table>
+          <div style="margin-top:8px">demo 型解构的特点：把演示未覆盖的分支<b>强制显式化</b> —— 待澄清 3 条（仅退款的进度形态？拒绝态展示？催一催商家侧收到什么？），假设 2 条。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="sn">3</span>输出一<br>业务视角</div>
+        <div class="step-body">
+          <table class="mini">
+            <tr><th>故事</th><th>命中结果</th></tr>
+            <tr><td>US-1 查看售后处理进度</td><td>售后进度查询（4.0）→ 售后服务 / 售后组</td></tr>
+            <tr><td>US-2 查看退货物流轨迹</td><td>物流跟踪（3.0）→ 履约服务 / 履约组</td></tr>
+            <tr><td>US-3 催促商家处理</td><td><span class="miss">未命中</span> → 标记为疑似新功能点</td></tr>
+          </table>
+          <div class="chips" style="margin-top:8px">
+            <span class="chip">数据影响：售后单 · 发货单的读方核对展示口径</span>
+            <span class="chip hot">US-3 进入回补流程 ↓</span>
+          </div>
+          <div style="margin-top:8px"><b>回补闭环</b>：评审确认「催一催」确属新能力 → 业务图谱新增 <code>fp-remind-merchant 售后催办</code>（keywords: 催一催·提醒商家），归入售后域；下一个涉及催办的需求即可直接命中 —— <b>地图靠需求生长，这条故事重新匹配后继续评估</b>。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="sn">4</span>输出二<br>技术视角</div>
+        <div class="step-body">
+          <table class="mini">
+            <tr><th>接口</th><th>模块（一级目录）</th><th>来源</th></tr>
+            <tr><td><code>GET /api/aftersale/progress</code></td><td><code>aftersale-service/progress</code></td><td>swagger</td></tr>
+            <tr><td><code>GET /api/logistics/track</code>（调用链下游）</td><td><code>fulfillment-service/tracking</code></td><td>code-graph</td></tr>
+            <tr><td><code>POST /api/aftersale/remind</code></td><td><span class="miss">新增接口</span> —— 新功能点无锚点，提示走接口设计评审</td><td>—</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-label"><span class="sn">5</span>质量动作</div>
+        <div class="step-body">
+          <div class="chips">
+            <span class="chip">接口测试范围：progress + track 两接口</span>
+            <span class="chip">待澄清 3 条进评审会逐条过（demo 未覆盖分支不许脑补）</span>
+            <span class="chip">新接口 remind → 先补接口设计与锚点，再进开发</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="notes" style="margin-top:16px">
+    <li><b>两个例子演示了两条关键路径</b>：例一是标准路径（全部命中，双视角直接产出）；例二是 demo 输入 + 未命中回补（新功能点先进图谱和锚点，再进开发）。</li>
+    <li><b>对照真实产物</b>：例一业务视角与仓库 <code>examples/out/REQ-2026-001-影响评估报告.md</code> 的实际输出一致，可在 GitHub 上查看完整报告（含影响图与建议全文）。</li>
+  </ul>
+</section>
+
+<!-- ============ 图四 泳道 ============ -->
+<section id="fig4">
+  <div class="fig-eyebrow">
+    <span class="no">图五</span>
+    <h2>协作泳道：谁在哪一步做什么</h2>
+    <span class="q">列即角色，编号即顺序；系统吃机械劳动，人只做判断</span>
+  </div>
+  <div class="figure">
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant P as 产品 / 业务方
+  participant SYS as req-insight 系统
+  participant BA as BA / 需求分析
+  participant DEV as 研发团队
+
+  P->>SYS: 提交原始需求（文档 或 demo 走查记录）
+  activate SYS
+  SYS->>SYS: 归一化 + LLM 解构初稿
+  SYS->>BA: 解构产物：旅程 / 故事 / 泳道图 / 假设 / 待澄清
+  deactivate SYS
+  activate BA
+  BA->>SYS: 审校后回传（修订故事与假设）
+  deactivate BA
+  activate SYS
+  SYS->>SYS: 匹配 + 业务传播 + 技术下钻
+  SYS->>BA: 疑似新功能点（若有未命中故事）
+  SYS->>DEV: 报告：业务视角（系统功能）+ 技术视角（接口 · 模块）
+  deactivate SYS
+  BA->>BA: 判断：新能力？还是关键词缺失？
+  DEV->>DEV: 按技术视角圈定改动 · 测试范围 · 联调排期
+  BA->>P: 提请评审：假设 + 待澄清问题
+  DEV->>P: 评估结论与排期建议
+  P->>BA: 评审会拍板(逐条过假设与待澄清)
+  BA->>BA: 回补业务图谱与锚点（走 PR 评审）
+
+  Note over P,DEV: 系统步骤 ②③⑤⑥⑦ 全自动，一条命令跑完；人工步骤全部是评审性质
+</pre>
+  </div>
+  <ul class="notes">
+    <li><b>研发在第 ⑨ 步才介入</b>，但拿到的已经是「改哪些接口和模块、测什么、找哪些团队」—— 理解需求的成本从开发期移到了评审前，这就是左移的收益。</li>
+    <li><b>最后一步是闭环</b>：评审产生的新认知（步骤 ⑬）落回业务图谱与锚点，下一个需求受益。</li>
+  </ul>
+</section>
+
+<!-- ============ 图五 热力图 ============ -->
+<section id="fig5">
+  <div class="fig-eyebrow">
+    <span class="no">图六</span>
+    <h2>沉淀之后：功能点变更热力图</h2>
+    <span class="q">每次评估留下命中记录，按月累计就是这张图（示例数据）</span>
+  </div>
+  <div class="figure">
+    <div class="heat-toolbar">
+      <span class="heat-legend">
+        命中需求数&nbsp;
+        <span class="cellkey" style="background:var(--heat-0)"></span>
+        <span class="cellkey" style="background:var(--heat-1)"></span>
+        <span class="cellkey" style="background:var(--heat-2)"></span>
+        <span class="cellkey" style="background:var(--heat-3)"></span>
+        <span class="cellkey" style="background:var(--heat-4)"></span>
+        &nbsp;0 → 4+
+      </span>
+      <span><span class="crit">高关键度</span> = 业务图谱中 criticality: high 的功能点</span>
+    </div>
+    <div class="heat-scroll">
+      <table class="heat" id="heatmap"></table>
+    </div>
+  </div>
+  <ul class="notes">
+    <li><b>决策矩阵</b>：热 × 关键（订单计价）→ 优先补自动化回归与监控；热 × 非关键 → 考虑重构降低改动成本；冷 × 关键（登录注册）→ 控制准入、保持稳定。</li>
+    <li>叠加技术图谱后可以下钻到<b>模块热力</b>：哪个模块被最多需求反复改 —— 重构优先级的量化依据。</li>
+  </ul>
+</section>
+
+<!-- ============ 决策 ============ -->
+<section id="decisions">
+  <div class="fig-eyebrow">
+    <span class="no">附</span>
+    <h2>关键设计决策</h2>
+  </div>
+  <div class="figure" style="padding:8px 22px 14px">
+    <table class="decisions">
+      <thead><tr><th>决策</th><th>理由</th><th>代价与对策</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>图谱用 YAML 而非图数据库</td>
+          <td>图谱即代码：改图走 PR、CI 校验，维护贴着研发流程；百级功能点用不上图数据库。</td>
+          <td>超大规模时再迁移，模型不变。</td>
+        </tr>
+        <tr>
+          <td>匹配用关键词打分而非向量/LLM</td>
+          <td>影响面结论必须可解释：报告列出命中了哪些词，可肉眼复核。</td>
+          <td>依赖 keywords 质量 → 未命中回补机制兜底；LLM 复核作为二道召回（Roadmap）。</td>
+        </tr>
+        <tr>
+          <td>传播有界（业务触发 ≤3 跳；技术调用链 ≤2 跳）</td>
+          <td>要「值得看一眼的范围」，不是可达性闭包 —— 全图都受影响等于没有结论。</td>
+          <td>极端长链路可能漏报 → 跳数可配，高关键度节点单独提示。</td>
+        </tr>
+        <tr>
+          <td>解构产物是独立 YAML 文件</td>
+          <td>LLM 产出只是初稿，人工修订后的才是需求资产，随需求归档、可重跑。</td>
+          <td>多一份文件 → 与需求编号绑定进仓库。</td>
+        </tr>
+        <tr>
+          <td>demo 型输入强制「假设/待澄清」显式化</td>
+          <td>demo 只覆盖 happy path，最大风险是把演示脑补成完整需求。</td>
+          <td>待澄清变多 → 这正是目的：评审会逐条过。</td>
+        </tr>
+        <tr>
+          <td>技术图谱提取源 = Swagger + AI 代码图谱<b>（已拍板）</b></td>
+          <td>有接口文档的走 Swagger（准确便宜）；没有的由 LLM 扫代码仓库生成，双源覆盖全部服务。</td>
+          <td>AI 提取可能有误 → 每条带 source 标记，冲突时 Swagger 优先；CI 定期重提取纠偏。</td>
+        </tr>
+        <tr>
+          <td>模块粒度 = 服务内一级目录/包<b>（已拍板）</b></td>
+          <td>粒度够回答「改哪」，锚点与依赖关系维护量可控。</td>
+          <td>大模块内部看不清 → 跑通后按热点模块局部下钻，不全量细化。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  需求影响评估模块 · 设计评审材料 · 代码分支 <code>claude/requirements-analysis-module-sb0vna</code>（第一列 + 业务视角已实现；锚点与技术图谱为设计稿）· 图五为示例数据
+</footer>
+
+</div>
+
+<div id="tip"></div>
+
+<script>
+(function () {
+  "use strict";
+  var months = ["02 月", "03 月", "04 月", "05 月", "06 月", "07 月"];
+  var rows = [
+    ["用户域", "登录注册", true,  [0,0,1,0,0,0]],
+    ["用户域", "会员等级", false, [0,1,0,0,1,0]],
+    ["营销域", "优惠券使用", false, [1,0,1,1,0,1]],
+    ["营销域", "积分账户管理", true, [0,0,1,1,2,2]],
+    ["营销域", "积分获取", false, [0,0,0,1,1,1]],
+    ["交易域", "购物车管理", false, [0,1,0,0,0,1]],
+    ["交易域", "提交订单", true,  [1,1,2,1,2,2]],
+    ["交易域", "订单计价", true,  [2,1,2,3,3,4]],
+    ["交易域", "支付单创建", false, [0,1,1,0,1,1]],
+    ["交易域", "支付回调处理", true, [1,0,2,1,2,2]],
+    ["履约域", "发货", false, [0,1,0,1,0,1]],
+    ["履约域", "物流跟踪", false, [0,0,1,0,1,1]],
+    ["售后域", "售后申请", false, [1,0,1,1,0,1]],
+    ["售后域", "售后审核", false, [0,0,0,1,0,1]],
+    ["售后域", "退款执行", true,  [0,1,1,1,2,2]],
+    ["售后域", "售后进度查询", false, [0,0,0,0,1,2]]
+  ];
+
+  var table = document.getElementById("heatmap");
+  var html = "<thead><tr><th class=\"rowh\">功能点</th>";
+  for (var m = 0; m < months.length; m++) html += "<th>2026·" + months[m] + "</th>";
+  html += "<th>合计</th></tr></thead><tbody>";
+
+  var lastDomain = "";
+  for (var i = 0; i < rows.length; i++) {
+    var domain = rows[i][0], name = rows[i][1], crit = rows[i][2], vals = rows[i][3];
+    if (domain !== lastDomain) {
+      html += "<tr><td class=\"domain\" colspan=\"8\">" + domain + "</td></tr>";
+      lastDomain = domain;
+    }
+    var total = 0;
+    html += "<tr><th class=\"rowh\" scope=\"row\">" + name + (crit ? "<span class=\"crit\">高关键度</span>" : "") + "</th>";
+    for (var j = 0; j < vals.length; j++) {
+      var v = vals[j];
+      total += v;
+      var bin = v >= 4 ? 4 : v;
+      html += "<td class=\"cell v" + bin + "\" data-name=\"" + name + "\" data-month=\"2026 年 " + months[j] + "\" data-v=\"" + v + "\">" + (v > 0 ? v : "0") + "</td>";
+    }
+    html += "<td class=\"total\">" + total + "</td></tr>";
+  }
+  html += "</tbody>";
+  table.innerHTML = html;
+
+  var tip = document.getElementById("tip");
+  table.addEventListener("mousemove", function (e) {
+    var td = e.target.closest("td.cell");
+    if (!td) { tip.style.display = "none"; return; }
+    tip.textContent = td.getAttribute("data-name") + " · " + td.getAttribute("data-month") + " · 命中 " + td.getAttribute("data-v") + " 个需求";
+    tip.style.display = "block";
+    var x = e.clientX + 14, y = e.clientY + 14;
+    if (x + tip.offsetWidth > window.innerWidth - 8) x = e.clientX - tip.offsetWidth - 10;
+    tip.style.left = x + "px";
+    tip.style.top = y + "px";
+  });
+  table.addEventListener("mouseleave", function () { tip.style.display = "none"; });
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ startOnLoad: false });
+    mermaid.run({ querySelector: 'pre.mermaid' });
+  }
+</script>
+</body>
+</html>

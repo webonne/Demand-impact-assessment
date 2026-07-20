@@ -102,6 +102,22 @@
   td.stagecol { font-weight: 700; white-space: nowrap; }
 
   footer { margin-top: 44px; color: var(--sub); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 14px; }
+
+  /* 编辑功能 */
+  .toolbar { position: fixed; top: 14px; right: 16px; z-index: 99; display: flex; gap: 8px; }
+  .toolbar button { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer; box-shadow: 0 2px 8px rgba(26,34,51,.08); font-family: inherit; }
+  .toolbar button:hover { border-color: var(--blue); color: var(--blue); }
+  body.editing #btnEdit { background: var(--blue); color: #fff; border-color: var(--blue); }
+  body.editing .wrap { outline: 2px dashed #b9cdf5; outline-offset: 12px; border-radius: 4px; caret-color: var(--blue); }
+  .edit-hint { display: none; position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 12.5px; padding: 7px 18px; border-radius: 999px; opacity: .92; z-index: 99; white-space: nowrap; }
+  body.editing .edit-hint { display: block; }
+  .add-row-btn { display: none; margin: 8px 12px 10px; border: 1px dashed var(--blue); color: var(--blue); background: var(--blue-bg); border-radius: 7px; padding: 4px 14px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  body.editing .add-row-btn { display: inline-block; }
+  .del-row-btn { position: absolute; display: none; z-index: 98; width: 22px; height: 22px; border-radius: 50%; border: 1px solid #f2c7c4; background: var(--red-bg); color: var(--red); font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; padding: 0; }
+  .restore-bar { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 100; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--amber); border-radius: 10px; padding: 10px 16px; font-size: 13px; box-shadow: 0 4px 16px rgba(26,34,51,.12); display: flex; align-items: center; gap: 12px; }
+  .restore-bar button { border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 4px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  .restore-bar button.yes { background: var(--blue); color: #fff; border-color: var(--blue); }
+  @media print { .toolbar, .edit-hint, .add-row-btn, .del-row-btn, .restore-bar { display: none !important; } }
 </style>
 </head>
 <body>
@@ -305,5 +321,148 @@
 
   <footer>质量保障体系 · 配套文档:《01-会议纪要》《02-建设方案》 · 【待补充】处由各负责人填充实际数据</footer>
 </div>
+
+<div class="toolbar" contenteditable="false">
+  <button id="btnEdit" type="button">✏️ 编辑模式</button>
+  <button id="btnSave" type="button" title="把当前页面(含修改)导出为 HTML 文件,覆盖原文件即完成保存">⬇️ 下载保存</button>
+  <button id="btnReset" type="button" title="清除浏览器暂存的修改,恢复为文件原始内容">⟲ 放弃修改</button>
+</div>
+<div class="edit-hint">编辑模式:点击任意文字直接修改 · 表格可增删行 · Ctrl+Z 撤销 · 改完点"⬇️ 下载保存"导出</div>
+
+<script>
+(function () {
+  var KEY = 'qa-bigmap-autosave';
+  var wrap = document.querySelector('.wrap');
+  var btnEdit = document.getElementById('btnEdit');
+
+  /* ---- 当前内容快照(剔除动态控件,用于暂存/比对) ---- */
+  function currentHTML() {
+    var c = wrap.cloneNode(true);
+    c.querySelectorAll('.add-row-btn, .del-row-btn').forEach(function (el) { el.remove(); });
+    c.removeAttribute('contenteditable');
+    return c.innerHTML;
+  }
+
+  /* ---- 浏览器暂存(防止刷新丢失) ---- */
+  var timer = null;
+  function autosave() {
+    try { localStorage.setItem(KEY, currentHTML()); } catch (e) {}
+  }
+  wrap.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(autosave, 400);
+  });
+
+  /* ---- 表格:增加一行 / 删除一行 ---- */
+  function initTableAids() {
+    document.querySelectorAll('.add-row-btn').forEach(function (el) { el.remove(); });
+    document.querySelectorAll('.tbl-scroll table').forEach(function (tbl) {
+      var btn = document.createElement('button');
+      btn.className = 'add-row-btn';
+      btn.type = 'button';
+      btn.contentEditable = 'false';
+      btn.textContent = '＋ 增加一行';
+      btn.addEventListener('click', function () {
+        var rows = tbl.rows;
+        var last = rows[rows.length - 1];
+        var tr = last.cloneNode(true);
+        Array.prototype.forEach.call(tr.cells, function (td) { td.innerHTML = '&nbsp;'; });
+        last.parentNode.appendChild(tr);
+        autosave();
+      });
+      tbl.parentNode.appendChild(btn);
+    });
+  }
+
+  var delBtn = document.createElement('button');
+  delBtn.className = 'del-row-btn';
+  delBtn.type = 'button';
+  delBtn.contentEditable = 'false';
+  delBtn.title = '删除此行';
+  delBtn.textContent = '✕';
+  document.body.appendChild(delBtn);
+  var curRow = null;
+  document.addEventListener('mouseover', function (e) {
+    if (!document.body.classList.contains('editing')) return;
+    if (e.target === delBtn) return;
+    var tr = e.target.closest ? e.target.closest('.tbl-scroll tr') : null;
+    if (tr && tr.querySelector('td')) {
+      curRow = tr;
+      var r = tr.getBoundingClientRect();
+      delBtn.style.display = 'block';
+      delBtn.style.top = (window.scrollY + r.top + r.height / 2 - 11) + 'px';
+      delBtn.style.left = (window.scrollX + Math.max(r.left - 30, 4)) + 'px';
+    } else if (!e.target.closest || !e.target.closest('.tbl-scroll')) {
+      delBtn.style.display = 'none';
+    }
+  });
+  delBtn.addEventListener('click', function () {
+    if (curRow) { curRow.remove(); curRow = null; delBtn.style.display = 'none'; autosave(); }
+  });
+
+  /* ---- 编辑模式开关 ---- */
+  btnEdit.addEventListener('click', function () {
+    var on = document.body.classList.toggle('editing');
+    wrap.contentEditable = on ? 'true' : 'false';
+    btnEdit.textContent = on ? '✔ 完成编辑' : '✏️ 编辑模式';
+    if (!on) { delBtn.style.display = 'none'; autosave(); }
+  });
+
+  /* ---- 下载保存:导出干净的完整 HTML,覆盖原文件即持久化 ---- */
+  document.getElementById('btnSave').addEventListener('click', function () {
+    var doc = document.documentElement.cloneNode(true);
+    doc.querySelectorAll('.add-row-btn, .del-row-btn, .restore-bar, script[src]').forEach(function (el) { el.remove(); });
+    var body = doc.querySelector('body');
+    body.classList.remove('editing');
+    doc.querySelector('.wrap').removeAttribute('contenteditable');
+    doc.querySelector('#btnEdit').textContent = '✏️ 编辑模式';
+    var html = '<!DOCTYPE html>\n' + doc.outerHTML;
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '03-质量保障体系-大图.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
+  });
+
+  /* ---- 放弃修改:清除暂存并恢复文件原始内容 ---- */
+  document.getElementById('btnReset').addEventListener('click', function () {
+    if (!confirm('确定放弃所有未导出的修改,恢复为文件原始内容吗?')) return;
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    location.reload();
+  });
+
+  /* ---- 启动:提示恢复上次未导出的编辑 ---- */
+  initTableAids();
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (saved && saved !== currentHTML()) {
+    var bar = document.createElement('div');
+    bar.className = 'restore-bar';
+    bar.contentEditable = 'false';
+    bar.innerHTML = '<span>检测到上次有未导出的编辑内容</span>';
+    var yes = document.createElement('button');
+    yes.className = 'yes';
+    yes.textContent = '恢复';
+    yes.addEventListener('click', function () {
+      wrap.innerHTML = saved;
+      initTableAids();
+      if (document.body.classList.contains('editing')) wrap.contentEditable = 'true';
+      bar.remove();
+    });
+    var no = document.createElement('button');
+    no.textContent = '忽略并清除';
+    no.addEventListener('click', function () {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      bar.remove();
+    });
+    bar.appendChild(yes);
+    bar.appendChild(no);
+    document.body.appendChild(bar);
+  }
+})();
+</script>
 </body>
 </html>

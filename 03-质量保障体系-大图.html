@@ -99,6 +99,13 @@
   .tag.ok { background: var(--green-bg); color: var(--green); }
   .tag.bad { background: var(--red-bg); color: var(--red); }
   .todo { color: var(--amber); background: var(--amber-bg); border-radius: 5px; padding: 0 6px; font-size: 12px; white-space: nowrap; }
+
+  /* 对外/对内标签 */
+  .scope { display: inline-block; font-size: 11px; border-radius: 4px; padding: 0 7px; margin-left: 6px; font-weight: 700; white-space: nowrap; vertical-align: 1px; }
+  .scope.ext { background: var(--red); color: #fff; }
+  .scope.int { background: #eceff4; color: var(--sub); border: 1px solid var(--line); }
+  .legend .scope { margin-left: 0; margin-right: 5px; }
+  body.editing .scope { cursor: pointer; box-shadow: 0 0 0 2px rgba(47,111,237,.25); }
   td.stagecol { font-weight: 700; white-space: nowrap; }
 
   footer { margin-top: 44px; color: var(--sub); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 14px; }
@@ -128,7 +135,8 @@
     <div class="tagline">机制建设(兜底)+ 流程控制点(过程管控) · 依据质量保障体系梳理会议整理 · 【待补充】处需负责人填充</div>
     <div class="banner">
       现状判断:<b>大错没有,小错不断</b>。P0/P1 已降下来,但交付给业务的东西仍然粗糙,目前主要靠人兜底。
-      目标:<b>从"靠人"转向"靠体系"</b>——凡是靠人的点,都变成强制的前置检查项。
+      目标:<b>从"靠人"转向"靠体系"</b>——凡是靠人的点,都变成强制的前置检查项。<br>
+      讨论重点:<b>让外部感知变好</b>——优先解决业务/客户可感知的<span class="scope ext">对外</span>问题;<span class="scope int">对内</span>问题控制投入、小步推进,避免摊子铺太大拖累节奏。
     </div>
   </header>
 
@@ -174,7 +182,7 @@
   </div>
 
   <h2><span class="no">三</span>端到端流程控制点大图</h2>
-  <div class="h2sub">每个阶段:现有控制点(绿)→ 问题差距(红)→ 改进方向(蓝);红色标题为当前最突出环节。</div>
+  <div class="h2sub">每个阶段:现有控制点(绿)→ 问题差距(红)→ 改进方向(蓝);红色标题为当前最突出环节。问题已标注 <span class="scope ext">对外</span>(业务/客户可感知,重点讨论)/ <span class="scope int">对内</span>(内部质量效率,控制投入)。</div>
 
   <div class="flow-scroll">
     <div class="flow">
@@ -183,7 +191,7 @@
         <div class="s-head">0 业务设计方案<small>环节缺失,建设中</small></div>
         <div class="s-body">
           <div class="chip wip"><b>建设中</b>业务方案模板与方法</div>
-          <div class="chip bad"><b>问题</b>业务方案没做,是下游多数问题的根源</div>
+          <div class="chip bad"><b>问题<span class="scope ext">对外</span></b>业务方案没做,是下游多数问题的根源</div>
           <div class="owner">李敏</div>
         </div>
       </div>
@@ -192,7 +200,7 @@
         <div class="s-head">1 需求</div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>需求评审</div>
-          <div class="chip bad"><b>问题</b>需求写不清 → 开发走偏;产品场景考虑不足</div>
+          <div class="chip bad"><b>问题<span class="scope ext">对外</span></b>需求写不清 → 开发走偏;产品场景考虑不足</div>
           <div class="chip plan"><b>方向</b>需求模板化(验收标准/边界);AI 辅助另立专项</div>
           <div class="owner">待定</div>
         </div>
@@ -202,7 +210,7 @@
         <div class="s-head">2 设计</div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>内部设计评审</div>
-          <div class="chip bad"><b>问题</b>缺整体蓝图,反复改、不可扩展(CSDP/CDD)</div>
+          <div class="chip bad"><b>问题<span class="scope int">对内</span></b>缺整体蓝图,反复改、不可扩展(CSDP/CDD)</div>
           <div class="chip plan"><b>方向</b>核心产品先补大蓝图,评审对照蓝图查扩展性</div>
           <div class="owner">待定</div>
         </div>
@@ -212,7 +220,7 @@
         <div class="s-head">3 编码(AI)</div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>Code Review(核心模块)· 自测要求</div>
-          <div class="chip bad"><b>问题</b>AI 代码量大 CR 看不过来;合作方不懂业务也不问;自测有差距</div>
+          <div class="chip bad"><b>问题<span class="scope int">对内</span></b>AI 代码量大 CR 看不过来;合作方不懂业务也不问;自测有差距</div>
           <div class="chip plan"><b>方向</b>分级 CR;自测清单化(方案已讨论)</div>
           <div class="owner">宏卫</div>
         </div>
@@ -222,7 +230,7 @@
         <div class="s-head">4 测试<small>问题集中</small></div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>SIT / 业务验证</div>
-          <div class="chip bad"><b>问题</b>不做产品验证;账号/权限未打通;基础数据缺失(OTC 最突出);无全场景验证</div>
+          <div class="chip bad"><b>问题<span class="scope ext">对外</span></b>不做产品验证;账号/权限未打通;基础数据缺失(OTC 最突出);无全场景验证</div>
           <div class="chip plan"><b>方向</b>上线前强制产品验证;账号与基础数据前置准备,做成检查项</div>
           <div class="owner">待定</div>
         </div>
@@ -232,7 +240,7 @@
         <div class="s-head">5 发布<small>最突出</small></div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>发布流程(体验、业务验收)</div>
-          <div class="chip bad"><b>问题</b>影响面识别不了、管控不住——发布后影响上下游而不自知</div>
+          <div class="chip bad"><b>问题<span class="scope ext">对外</span></b>影响面识别不了、管控不住——发布后影响上下游而不自知</div>
           <div class="chip plan"><b>方向</b>发布前强制影响面分析(上下游依赖盘点),与灰度联动放量</div>
           <div class="owner">待定</div>
         </div>
@@ -255,6 +263,8 @@
     <span><span class="dot" style="background:var(--red-bg);border:1px solid var(--red)"></span>问题 / 差距</span>
     <span><span class="dot" style="background:var(--blue-bg);border:1px solid var(--blue)"></span>改进方向</span>
     <span><span class="dot" style="background:var(--amber-bg);border:1px solid var(--amber)"></span>建设中 / 待补充</span>
+    <span><span class="scope ext">对外</span>业务/客户可感知 · 重点讨论</span>
+    <span><span class="scope int">对内</span>内部质量/效率 · 控制投入</span>
   </div>
 
   <div class="base">
@@ -292,18 +302,18 @@
   </div>
 
   <h2><span class="no">六</span>典型问题清单 → 阶段映射</h2>
-  <div class="h2sub">小明已汇总的 8 条;共性结论:目前靠人兜底,要变成强制前置检查项。</div>
+  <div class="h2sub">小明已汇总的 8 条;共性结论:目前靠人兜底,要变成强制前置检查项。<span class="scope ext">对外</span>为重点讨论项;编辑模式下点击标签可切换对外/对内。</div>
   <div class="tbl-scroll">
     <table>
-      <tr><th style="width:44px">#</th><th>问题</th><th style="width:180px">所属阶段</th></tr>
-      <tr><td>1</td><td>需求理解有偏差,到编码环节就断了</td><td><span class="tag bad">需求 → 编码</span></td></tr>
-      <tr><td>2</td><td>开发缺乏业务全局视角</td><td><span class="tag bad">编码</span></td></tr>
-      <tr><td>3</td><td>改动影响面分析缺失</td><td><span class="tag bad">设计 / 发布</span></td></tr>
-      <tr><td>4</td><td>SIT 环境问题多;只做业务验证,没做生产级验证</td><td><span class="tag bad">测试</span></td></tr>
-      <tr><td>5</td><td>测试人员权限不对</td><td><span class="tag bad">测试</span></td></tr>
-      <tr><td>6</td><td>产品漏测</td><td><span class="tag bad">测试</span></td></tr>
-      <tr><td>7</td><td>UAT 阻塞:基础数据缺失</td><td><span class="tag bad">测试</span></td></tr>
-      <tr><td>8</td><td>体验问题</td><td><span class="tag bad">发布 / 验收</span></td></tr>
+      <tr><th style="width:44px">#</th><th>问题</th><th style="width:90px">对外/对内</th><th style="width:180px">所属阶段</th></tr>
+      <tr><td>1</td><td>需求理解有偏差,到编码环节就断了</td><td><span class="scope ext">对外</span></td><td><span class="tag bad">需求 → 编码</span></td></tr>
+      <tr><td>2</td><td>开发缺乏业务全局视角</td><td><span class="scope int">对内</span></td><td><span class="tag bad">编码</span></td></tr>
+      <tr><td>3</td><td>改动影响面分析缺失</td><td><span class="scope ext">对外</span></td><td><span class="tag bad">设计 / 发布</span></td></tr>
+      <tr><td>4</td><td>SIT 环境问题多;只做业务验证,没做生产级验证</td><td><span class="scope int">对内</span></td><td><span class="tag bad">测试</span></td></tr>
+      <tr><td>5</td><td>测试人员权限不对</td><td><span class="scope int">对内</span></td><td><span class="tag bad">测试</span></td></tr>
+      <tr><td>6</td><td>产品漏测</td><td><span class="scope ext">对外</span></td><td><span class="tag bad">测试</span></td></tr>
+      <tr><td>7</td><td>UAT 阻塞:基础数据缺失</td><td><span class="scope ext">对外</span></td><td><span class="tag bad">测试</span></td></tr>
+      <tr><td>8</td><td>体验问题</td><td><span class="scope ext">对外</span></td><td><span class="tag bad">发布 / 验收</span></td></tr>
     </table>
   </div>
 
@@ -398,6 +408,19 @@
   });
   delBtn.addEventListener('click', function () {
     if (curRow) { curRow.remove(); curRow = null; delBtn.style.display = 'none'; autosave(); }
+  });
+
+  /* ---- 对外/对内标签:编辑模式下点击切换 ---- */
+  document.addEventListener('click', function (e) {
+    if (!document.body.classList.contains('editing')) return;
+    var s = e.target.closest ? e.target.closest('.scope') : null;
+    if (!s || !wrap.contains(s)) return;
+    if (s.closest('.legend, .h2sub, .banner')) return; /* 图例/说明中的示例标签不切换 */
+    e.preventDefault();
+    var ext = s.classList.toggle('ext');
+    s.classList.toggle('int', !ext);
+    s.textContent = ext ? '对外' : '对内';
+    autosave();
   });
 
   /* ---- 编辑模式开关 ---- */

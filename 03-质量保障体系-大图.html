@@ -75,6 +75,10 @@
   .chip { border-radius: 7px; padding: 6px 9px; font-size: 12px; line-height: 1.5; }
   .chip.ok   { background: var(--green-bg); color: var(--green); }
   .chip.bad  { background: var(--red-bg); color: var(--red); }
+  .chip.badin { background: #eef1f6; color: var(--sub); }
+  .chip .mk { display: inline-block; font-size: 10px; border-radius: 4px; padding: 0 5px; margin-right: 4px; font-weight: 700; color: #fff; }
+  .mk.ext { background: var(--red); }
+  .mk.int { background: #8b94a6; }
   .chip.plan { background: var(--blue-bg); color: var(--blue); }
   .chip.wip  { background: var(--amber-bg); color: var(--amber); }
   .chip b { display: block; font-size: 11px; opacity: .8; margin-bottom: 1px; }
@@ -162,7 +166,7 @@
   </div>
 
   <h2><span class="no">三</span>端到端流程控制点大图</h2>
-  <div class="h2sub">每个阶段:现有控制点(绿)→ 问题差距(红)→ 改进方向(蓝);红色标题为当前最突出环节。</div>
+  <div class="h2sub">每个阶段:现有控制点(绿)→ 问题差距 → 改进方向(蓝);问题分 <span class="tag ext">对外</span>(业务能直接感知,优先做)和 <span class="tag int">对内</span>(内部过程,克制收敛);红色标题为当前最突出环节。</div>
 
   <div class="flow-scroll">
     <div class="flow">
@@ -171,7 +175,7 @@
         <div class="s-head">0 业务设计方案<small>环节缺失,建设中</small></div>
         <div class="s-body">
           <div class="chip wip"><b>建设中</b>业务方案模板与方法</div>
-          <div class="chip bad"><b>问题</b>业务方案没做,是下游多数问题的根源</div>
+          <div class="chip bad"><b><span class="mk ext">对外</span>做得对不对</b>业务方案没做,价值/规则未与业务确认,是下游多数问题的根源</div>
           <div class="owner">李敏</div>
         </div>
       </div>
@@ -180,7 +184,8 @@
         <div class="s-head">1 需求</div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>需求评审</div>
-          <div class="chip bad"><b>问题</b>需求写不清 → 开发走偏;产品场景考虑不足</div>
+          <div class="chip bad"><b><span class="mk ext">对外</span>做得对不对</b>需求偏差 → 上线后返工/推翻重做;产品场景考虑不足</div>
+          <div class="chip badin"><b><span class="mk int">对内</span></b>需求写不清 → 开发理解偏差、走偏</div>
           <div class="chip plan"><b>方向</b>需求模板化(验收标准/边界);AI 辅助另立专项</div>
           <div class="owner">待定</div>
         </div>
@@ -190,7 +195,7 @@
         <div class="s-head">2 设计</div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>内部设计评审</div>
-          <div class="chip bad"><b>问题</b>缺整体蓝图,反复改、不可扩展(CSDP/CDD)</div>
+          <div class="chip badin"><b><span class="mk int">对内</span></b>缺整体蓝图,反复改、不可扩展(CSDP/CDD);外显为"做得对不对/稳不稳"</div>
           <div class="chip plan"><b>方向</b>核心产品先补大蓝图,评审对照蓝图查扩展性</div>
           <div class="owner">待定</div>
         </div>
@@ -200,7 +205,7 @@
         <div class="s-head">3 编码(AI)</div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>Code Review(核心模块)· 自测要求</div>
-          <div class="chip bad"><b>问题</b>AI 代码量大 CR 看不过来;合作方不懂业务也不问;自测有差距</div>
+          <div class="chip badin"><b><span class="mk int">对内</span></b>AI 代码量大 CR 看不过来;合作方不懂业务也不问;自测有差距;外显为"系统稳不稳"</div>
           <div class="chip plan"><b>方向</b>分级 CR;自测清单化(方案已讨论)</div>
           <div class="owner">宏卫</div>
         </div>
@@ -210,7 +215,8 @@
         <div class="s-head">4 测试<small>问题集中</small></div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>SIT / 业务验证</div>
-          <div class="chip bad"><b>问题</b>不做产品验证;账号/权限未打通;基础数据缺失(OTC 最突出);无全场景验证</div>
+          <div class="chip bad"><b><span class="mk ext">对外</span>交付靠不靠谱</b>UAT 阻塞:基础数据缺失(OTC 最突出);产品漏测 → 问题被业务先发现</div>
+          <div class="chip badin"><b><span class="mk int">对内</span></b>账号/权限未提前打通;SIT 环境问题;无全场景验证</div>
           <div class="chip plan"><b>方向</b>上线前强制产品验证;账号与基础数据前置准备,做成检查项</div>
           <div class="owner">待定</div>
         </div>
@@ -220,7 +226,8 @@
         <div class="s-head">5 发布<small>最突出</small></div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>发布流程(体验、业务验收)</div>
-          <div class="chip bad"><b>问题</b>影响面识别不了、管控不住——发布后影响上下游而不自知</div>
+          <div class="chip bad"><b><span class="mk ext">对外</span>系统稳不稳 · 体验好不好</b>发布后影响上下游而不自知,故障被业务先感知;体验问题</div>
+          <div class="chip badin"><b><span class="mk int">对内</span></b>影响面识别/管控能力缺失</div>
           <div class="chip plan"><b>方向</b>发布前强制影响面分析(上下游依赖盘点),与灰度联动放量</div>
           <div class="owner">待定</div>
         </div>
@@ -230,6 +237,7 @@
         <div class="s-head">6 运维</div>
         <div class="s-body">
           <div class="chip ok"><b>已有</b>工单/值班 · 可观测列表</div>
+          <div class="chip bad"><b><span class="mk ext">对外</span>协作专不专业</b>响应快不快、进展有没有说明、问题有没有闭环,业务直接感知</div>
           <div class="chip plan"><b>承接</b>四大机制兜底(见下方底座)</div>
           <div class="owner">待定</div>
         </div>
@@ -240,7 +248,8 @@
 
   <div class="legend">
     <span><span class="dot" style="background:var(--green-bg);border:1px solid var(--green)"></span>现有控制点</span>
-    <span><span class="dot" style="background:var(--red-bg);border:1px solid var(--red)"></span>问题 / 差距</span>
+    <span><span class="dot" style="background:var(--red-bg);border:1px solid var(--red)"></span>对外问题(业务能直接感知,优先做)</span>
+    <span><span class="dot" style="background:#eef1f6;border:1px solid #8b94a6"></span>对内问题(内部过程,克制收敛)</span>
     <span><span class="dot" style="background:var(--blue-bg);border:1px solid var(--blue)"></span>改进方向</span>
     <span><span class="dot" style="background:var(--amber-bg);border:1px solid var(--amber)"></span>建设中 / 待补充</span>
   </div>

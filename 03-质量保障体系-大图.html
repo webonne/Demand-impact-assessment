@@ -98,6 +98,9 @@
   td .tag { display: inline-block; font-size: 11.5px; border-radius: 5px; padding: 0 7px; margin: 1px 2px 1px 0; }
   .tag.ok { background: var(--green-bg); color: var(--green); }
   .tag.bad { background: var(--red-bg); color: var(--red); }
+  .tag.ext { background: var(--red-bg); color: var(--red); border: 1px solid #f2c7c4; font-weight: 700; }
+  .tag.int { background: #eef1f6; color: var(--sub); border: 1px solid var(--line); }
+  .tag.node { background: var(--blue-bg); color: var(--blue); }
   .todo { color: var(--amber); background: var(--amber-bg); border-radius: 5px; padding: 0 6px; font-size: 12px; white-space: nowrap; }
   td.stagecol { font-weight: 700; white-space: nowrap; }
 
@@ -112,7 +115,8 @@
     <div class="tagline">机制建设(兜底)+ 流程控制点(过程管控) · 依据质量保障体系梳理会议整理 · 【待补充】处需负责人填充</div>
     <div class="banner">
       现状判断:<b>大错没有,小错不断</b>。P0/P1 已降下来,但交付给业务的东西仍然粗糙,目前主要靠人兜底。
-      目标:<b>从"靠人"转向"靠体系"</b>——凡是靠人的点,都变成强制的前置检查项。
+      目标:<b>从"靠人"转向"靠体系"</b>——凡是靠人的点,都变成强制的前置检查项。<br>
+      改进优先级:<b>先做让外部(业务)感知变好的事</b>——内部做得再好,业务感知不强;摊子铺得太大,又容易互相牵扯。对内优化克制收敛,问题按「对外 / 对内」分类推进。
     </div>
   </header>
 
@@ -250,7 +254,57 @@
     <span class="m">质量持续运营</span>
   </div>
 
-  <h2><span class="no">四</span>机制建设现状与差距</h2>
+  <h2><span class="no">四</span>外部感知六问 → 端到端落点(重点)</h2>
+  <div class="h2sub">重点讨论「外部感知变好」:业务用这六个问题直接判断我们做得好不好;每一问都落到端到端流程的具体节点上,改进就改这些节点的控制点。</div>
+  <div class="tbl-scroll">
+    <table>
+      <tr><th style="width:110px">外部感知</th><th>业务的直接判断</th><th>常见问题表现</th><th style="width:190px">主要责任域</th><th style="width:210px">端到端落点</th></tr>
+      <tr>
+        <td><b>做得对不对</b></td>
+        <td>是否解决了值得解决的问题,上线后是否频繁推翻重做</td>
+        <td>价值目标不清、业务逻辑验证晚、上线后出现重大需求变更</td>
+        <td>规划质量:ITBP、PO;业务共同确认价值和规则</td>
+        <td><span class="tag node">0 业务方案</span><span class="tag node">1 需求</span></td>
+      </tr>
+      <tr>
+        <td><b>结果准不准</b></td>
+        <td>看板、计算和流程结果能否被信任</td>
+        <td>指标口径不一致、上下游数据不同步、数据长期不准确</td>
+        <td>产品、研发和数据治理;业务确认源数据和规则</td>
+        <td><span class="tag node">1 需求(口径)</span><span class="tag node">2 设计(数据链路)</span><span class="tag node">4 测试(数据验证)</span></td>
+      </tr>
+      <tr>
+        <td><b>系统稳不稳</b></td>
+        <td>关键流程能否正常使用,发布后是否频繁出现故障</td>
+        <td>阻断 Bug、生产逃逸、系统不稳定、同类问题反复出现</td>
+        <td>研发、测试</td>
+        <td><span class="tag node">3 编码</span><span class="tag node">4 测试</span><span class="tag node">5 发布(影响面)</span><span class="tag node">6 运维(机制兜底)</span></td>
+      </tr>
+      <tr>
+        <td><b>体验好不好</b></td>
+        <td>操作是否顺畅,性能和语言是否符合真实用户习惯</td>
+        <td>卡慢、交互不顺、多语言翻译不准确、不同网络环境体验不一致</td>
+        <td>产品、研发、测试</td>
+        <td><span class="tag node">1-2 需求/设计(交互)</span><span class="tag node">4 测试(体验/多语言)</span><span class="tag node">5 发布(体验验收)</span></td>
+      </tr>
+      <tr>
+        <td><b>交付靠不靠谱</b></td>
+        <td>业务开始 UAT 时,IT 是否已把必要条件准备完整</td>
+        <td>账号、权限、审批流、测试数据和上下游场景准备不足</td>
+        <td>TL、测试和 PO;业务配合验收资源</td>
+        <td><span class="tag node">4 测试(UAT 前置准备)</span><span class="tag node">5 发布(业务验收)</span></td>
+      </tr>
+      <tr>
+        <td><b>协作专不专业</b></td>
+        <td>出现问题后是否有人及时响应、说明进展并完成闭环</td>
+        <td>响应慢、风险沟通晚、临时处理后没有跟踪、问题重复发生</td>
+        <td>ITBP、PO、TL 和技术支持</td>
+        <td><span class="tag node">6 运维(响应/闭环)</span><span class="tag node">机制④ 持续运营</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <h2><span class="no">五</span>机制建设现状与差距</h2>
   <div class="h2sub">每个机制:现有建设 → 覆盖情况 → 差距;下一步计划由主持人统一补写。</div>
   <div class="tbl-scroll">
     <table>
@@ -263,7 +317,7 @@
     </table>
   </div>
 
-  <h2><span class="no">五</span>S 级系统机制覆盖盘点(模板)</h2>
+  <h2><span class="no">六</span>S 级系统机制覆盖盘点(模板)</h2>
   <div class="h2sub">按大领域列主要 S 级系统即可;✅ 已建 / 🔶 部分 / ❌ 未建。</div>
   <div class="tbl-scroll">
     <table>
@@ -275,23 +329,23 @@
     </table>
   </div>
 
-  <h2><span class="no">六</span>典型问题清单 → 阶段映射</h2>
-  <div class="h2sub">小明已汇总的 8 条;共性结论:目前靠人兜底,要变成强制前置检查项。</div>
+  <h2><span class="no">七</span>典型问题清单 → 阶段映射</h2>
+  <div class="h2sub">小明已汇总的 8 条;每条标注「对外 / 对内」——<b>对外(业务能直接感知)的优先做</b>,对内的克制收敛;共性结论:目前靠人兜底,要变成强制前置检查项。</div>
   <div class="tbl-scroll">
     <table>
-      <tr><th style="width:44px">#</th><th>问题</th><th style="width:180px">所属阶段</th></tr>
-      <tr><td>1</td><td>需求理解有偏差,到编码环节就断了</td><td><span class="tag bad">需求 → 编码</span></td></tr>
-      <tr><td>2</td><td>开发缺乏业务全局视角</td><td><span class="tag bad">编码</span></td></tr>
-      <tr><td>3</td><td>改动影响面分析缺失</td><td><span class="tag bad">设计 / 发布</span></td></tr>
-      <tr><td>4</td><td>SIT 环境问题多;只做业务验证,没做生产级验证</td><td><span class="tag bad">测试</span></td></tr>
-      <tr><td>5</td><td>测试人员权限不对</td><td><span class="tag bad">测试</span></td></tr>
-      <tr><td>6</td><td>产品漏测</td><td><span class="tag bad">测试</span></td></tr>
-      <tr><td>7</td><td>UAT 阻塞:基础数据缺失</td><td><span class="tag bad">测试</span></td></tr>
-      <tr><td>8</td><td>体验问题</td><td><span class="tag bad">发布 / 验收</span></td></tr>
+      <tr><th style="width:44px">#</th><th>问题</th><th style="width:70px">对外/对内</th><th style="width:130px">外部感知维度</th><th style="width:150px">所属阶段</th></tr>
+      <tr><td>1</td><td>需求理解有偏差,到编码环节就断了</td><td><span class="tag ext">对外</span></td><td>做得对不对</td><td><span class="tag bad">需求 → 编码</span></td></tr>
+      <tr><td>2</td><td>开发缺乏业务全局视角</td><td><span class="tag int">对内</span></td><td>(根因,外显为"做得对不对")</td><td><span class="tag bad">编码</span></td></tr>
+      <tr><td>3</td><td>改动影响面分析缺失</td><td><span class="tag int">对内</span></td><td>(外显为"系统稳不稳")</td><td><span class="tag bad">设计 / 发布</span></td></tr>
+      <tr><td>4</td><td>SIT 环境问题多;只做业务验证,没做生产级验证</td><td><span class="tag int">对内</span></td><td>(外显为"结果准不准")</td><td><span class="tag bad">测试</span></td></tr>
+      <tr><td>5</td><td>测试人员权限不对</td><td><span class="tag int">对内</span></td><td>(外显为"交付靠不靠谱")</td><td><span class="tag bad">测试</span></td></tr>
+      <tr><td>6</td><td>产品漏测</td><td><span class="tag ext">对外</span></td><td>系统稳不稳</td><td><span class="tag bad">测试</span></td></tr>
+      <tr><td>7</td><td>UAT 阻塞:基础数据缺失</td><td><span class="tag ext">对外</span></td><td>交付靠不靠谱</td><td><span class="tag bad">测试</span></td></tr>
+      <tr><td>8</td><td>体验问题</td><td><span class="tag ext">对外</span></td><td>体验好不好</td><td><span class="tag bad">发布 / 验收</span></td></tr>
     </table>
   </div>
 
-  <h2><span class="no">七</span>输出物与分工</h2>
+  <h2><span class="no">八</span>输出物与分工</h2>
   <div class="tbl-scroll">
     <table>
       <tr><th>事项</th><th>负责人</th><th>时间</th></tr>

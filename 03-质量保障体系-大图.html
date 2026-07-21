@@ -109,10 +109,33 @@
   td.stagecol { font-weight: 700; white-space: nowrap; }
 
   footer { margin-top: 44px; color: var(--sub); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 14px; }
+
+  /* 编辑工具条 */
+  .toolbar { position: fixed; top: 14px; right: 16px; z-index: 99; display: flex; gap: 8px; align-items: center; background: rgba(255,255,255,.95); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; box-shadow: 0 4px 16px rgba(15,30,60,.10); font-size: 13px; }
+  .toolbar button { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 7px; padding: 5px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  .toolbar button:hover { border-color: var(--blue); color: var(--blue); }
+  .toolbar button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .toolbar button.primary:hover { opacity: .9; color: #fff; }
+  .toolbar .hint { color: var(--sub); font-size: 11.5px; max-width: 150px; line-height: 1.3; }
+  body.editing .wrap { caret-color: var(--blue); }
+  body.editing .chip:hover, body.editing td:hover, body.editing th:hover,
+  body.editing .p-card:hover, body.editing h1:hover, body.editing h2:hover,
+  body.editing .banner:hover, body.editing .h2sub:hover, body.editing .step:hover,
+  body.editing .pillar:hover, body.editing .s-head:hover, body.editing .roof:hover,
+  body.editing .eave:hover, body.editing .found:hover, body.editing .owner:hover { outline: 1.5px dashed var(--blue); outline-offset: 2px; }
+  body.editing::after { content: "编辑模式:点击任意文字直接修改,修改自动保存在本浏览器"; position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 12px; padding: 6px 16px; border-radius: 999px; opacity: .92; z-index: 99; }
+  .restorebar { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 100; background: var(--amber-bg); border: 1px solid #ecd9ae; color: var(--amber); border-radius: 10px; padding: 8px 14px; font-size: 12.5px; display: flex; gap: 10px; align-items: center; box-shadow: 0 4px 16px rgba(15,30,60,.10); }
+  .restorebar button { border: 1px solid currentColor; background: transparent; color: inherit; border-radius: 6px; padding: 2px 10px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  @media print { .toolbar, .restorebar { display: none; } body.editing::after { display: none; } }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="toolbar" id="toolbar">
+  <button id="btnEdit" class="primary">✏️ 开启编辑</button>
+  <button id="btnDownload">⬇ 导出 HTML</button>
+  <button id="btnReset" title="清除本浏览器保存的修改,恢复文件原始内容">↺ 恢复原始</button>
+</div>
+<div class="wrap" id="content">
 
   <header>
     <h1>质量保障体系 · 端到端大图</h1>
@@ -366,7 +389,71 @@
     </table>
   </div>
 
-  <footer>质量保障体系 · 配套文档:《01-会议纪要》《02-建设方案》 · 【待补充】处由各负责人填充实际数据</footer>
+  <footer>质量保障体系 · 配套文档:《01-会议纪要》《02-建设方案》 · 【待补充】处由各负责人填充实际数据 · 右上角可开启编辑并导出修改后的 HTML</footer>
 </div>
+
+<script>
+(function () {
+  var KEY = 'qa-bigmap-content-v1';
+  var content = document.getElementById('content');
+  var btnEdit = document.getElementById('btnEdit');
+  var btnDownload = document.getElementById('btnDownload');
+  var btnReset = document.getElementById('btnReset');
+  var saveTimer = null;
+
+  // —— 恢复本浏览器中保存过的修改 ——
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (saved && saved !== content.innerHTML) {
+    var bar = document.createElement('div');
+    bar.className = 'restorebar';
+    bar.innerHTML = '检测到本浏览器有未导出的修改 <button id="rbYes">恢复修改</button><button id="rbNo">用原始内容</button>';
+    document.body.appendChild(bar);
+    bar.querySelector('#rbYes').onclick = function () { content.innerHTML = saved; bar.remove(); };
+    bar.querySelector('#rbNo').onclick = function () { bar.remove(); };
+  }
+
+  // —— 编辑模式开关 ——
+  function setEditing(on) {
+    content.contentEditable = on ? 'true' : 'false';
+    document.body.classList.toggle('editing', on);
+    btnEdit.textContent = on ? '✓ 完成编辑' : '✏️ 开启编辑';
+    btnEdit.classList.toggle('primary', !on);
+  }
+  btnEdit.onclick = function () { setEditing(content.contentEditable !== 'true'); };
+
+  // —— 输入时自动保存(防抖) ——
+  content.addEventListener('input', function () {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try { localStorage.setItem(KEY, content.innerHTML); } catch (e) {}
+    }, 400);
+  });
+
+  // —— 导出:把当前修改固化进一个新的 HTML 文件 ——
+  btnDownload.onclick = function () {
+    var wasEditing = content.contentEditable === 'true';
+    if (wasEditing) setEditing(false);
+    var doc = document.documentElement.cloneNode(true);
+    var rb = doc.querySelector('.restorebar'); if (rb) rb.remove();
+    var c = doc.querySelector('#content'); if (c) c.removeAttribute('contenteditable');
+    var html = '<!DOCTYPE html>\n' + doc.outerHTML;
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '质量保障体系-大图.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+    if (wasEditing) setEditing(true);
+  };
+
+  // —— 恢复原始:清掉本地保存,回到文件自带内容 ——
+  btnReset.onclick = function () {
+    if (!confirm('清除本浏览器保存的修改,恢复为文件原始内容?')) return;
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    location.reload();
+  };
+})();
+</script>
 </body>
 </html>
